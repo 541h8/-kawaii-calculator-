@@ -1,0 +1,3470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>✨ 萌萌科学计算器 ✨</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    background: url('http://yb.woa.com/By1oxiq1qiR') center/cover no-repeat fixed;
+    background-color: #2a1b4d;
+    font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
+    overflow-x: hidden;
+    overflow-y: auto;
+    touch-action: manipulation;
+    padding: 20px 10px;
+  }
+  /* 视口够高时垂直居中，避免小计算器在桌面端贴顶 */
+  @media (min-height: 720px) {
+    body { align-items: center; }
+  }
+
+  /* 暗色模式背景图 */
+  body.theme-dark {
+    background: url('http://yb.woa.com/EBYaU8FHhXL') center/cover no-repeat fixed;
+    background-color: #0f0c29;
+  }
+
+  /* 漂浮的小装饰 */
+  .deco {
+    position: fixed;
+    font-size: 28px;
+    opacity: .35;
+    animation: deco-float 5s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .deco:nth-child(1) { top: 6%;  left: 8%;  animation-delay: 0s;   font-size: 32px; }
+  .deco:nth-child(2) { top: 12%; right: 6%; animation-delay: 1.2s; font-size: 24px; }
+  .deco:nth-child(3) { bottom: 10%; left: 10%; animation-delay: 2.4s; font-size: 30px; }
+  .deco:nth-child(4) { bottom: 6%; right: 12%; animation-delay: 1.8s; font-size: 26px; }
+  .deco:nth-child(5) { top: 45%; left: 3%; animation-delay: 3s; font-size: 22px; }
+  .deco:nth-child(6) { top: 35%; right: 4%; animation-delay: 2.1s; font-size: 28px; }
+  .deco:nth-child(7) { top: 75%; left: 5%; animation-delay: 0.8s; font-size: 24px; }
+  .deco:nth-child(8) { top: 80%; right: 6%; animation-delay: 3.5s; font-size: 30px; }
+
+  @keyframes deco-float {
+    0%, 100% { transform: translateY(-12px) rotate(-6deg); }
+    33%      { transform: translateY(0) rotate(0deg); }
+    66%      { transform: translateY(12px) rotate(6deg); }
+  }
+
+  .calc {
+    position: relative;
+    z-index: 1;
+    width: 320px;
+    max-height: calc(100vh - 40px);
+    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255,255,255,.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 32px;
+    padding: 26px 22px 24px;
+    box-shadow:
+      0 20px 50px rgba(240, 140, 180, .25),
+      inset 0 1px 0 rgba(255,255,255,.9);
+    border: 2px solid rgba(255,255,255,.6);
+  }
+
+  /* 小表情 */
+  .mascot-wrap {
+    position: relative;
+    text-align: center;
+    margin-bottom: 4px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mascot {
+    font-size: 42px;
+    display: inline-block;
+    animation: float-bob 2.4s ease-in-out infinite, blink 4s ease infinite;
+    transition: transform .15s;
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .mascot.big-pop { animation: float-bob 2.4s ease-in-out infinite, blink 4s ease infinite, popBig .4s ease; }
+  .mascot.shake { animation: shake .4s ease; }
+  .mascot.spin { animation: spin .6s ease; }
+  .mascot.heart::after {
+    content: '💕';
+    position: absolute;
+    top: -8px; right: calc(50% - 12px);
+    font-size: 20px;
+    animation: floatUp 1.2s ease forwards;
+  }
+  .mascot.sparkle::before {
+    content: '✨';
+    position: absolute;
+    top: -4px; left: calc(50% - 10px);
+    font-size: 18px;
+    animation: floatUp 1s ease forwards;
+  }
+  .mascot.think::after {
+    content: '❓';
+    position: absolute;
+    top: -10px; right: calc(50% - 14px);
+    font-size: 18px;
+    animation: floatUp 1s ease forwards;
+  }
+  @keyframes float-bob {
+    0%   { transform: translateY(-8px); }
+    25%  { transform: translateY(0px); }
+    50%  { transform: translateY(8px); }
+    75%  { transform: translateY(0px); }
+    100% { transform: translateY(-8px); }
+  }
+  @keyframes blink {
+    0%, 45%, 55%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.1); }
+  }
+  @keyframes popBig {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.35); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    20%  { transform: translateX(-6px) rotate(-8deg); }
+    40%  { transform: translateX(6px) rotate(8deg); }
+    60%  { transform: translateX(-4px) rotate(-5deg); }
+    80%  { transform: translateX(4px) rotate(5deg); }
+  }
+  @keyframes spin {
+    0%   { transform: rotate(0deg) scale(1); }
+    50%  { transform: rotate(180deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
+  @keyframes floatUp {
+    0%   { opacity: 1; transform: translateY(0) scale(.5); }
+    100% { opacity: 0; transform: translateY(-40px) scale(1.3); }
+  }
+
+  .display {
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #fff5fa, #fce4ec);
+    border-radius: 20px;
+    padding: 16px 18px 14px;
+    margin-bottom: 16px;
+    text-align: right;
+    box-shadow: inset 0 3px 10px rgba(200,120,160,.15);
+    border: 2px solid rgba(244,143,177,.25);
+    min-height: 88px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .display .expr {
+    font-size: 15px;
+    color: #c98fb0;
+    min-height: 20px;
+    word-break: break-all;
+    overflow: hidden;
+  }
+
+  .display .result {
+    font-size: 40px;
+    font-weight: 700;
+    color: #d81b60;
+    line-height: 1.1;
+    word-break: break-all;
+    overflow: hidden;
+    transition: transform .08s;
+  }
+  .display .result.pop { transform: scale(1.06); }
+
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+  }
+
+  button {
+    border: none;
+    outline: none;
+    height: 56px;
+    border-radius: 18px;
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+    color: #7b4a7a;
+    background: linear-gradient(145deg, #ffffff, #fce4ec);
+    box-shadow:
+      0 4px 0 #f48fb1,
+      0 6px 12px rgba(244,143,177,.25);
+    transition: transform .06s, box-shadow .06s;
+    user-select: none;
+    -webkit-user-select: none;
+    font-family: inherit;
+    touch-action: manipulation;
+  }
+  button:active {
+    transform: translateY(4px);
+    box-shadow:
+      0 0 0 #f48fb1,
+      0 2px 4px rgba(244,143,177,.25);
+  }
+
+  button.op {
+    background: linear-gradient(145deg, #fce4ec, #f8bbd0);
+    color: #c2185b;
+  }
+  button.fn {
+    background: linear-gradient(145deg, #ede7f6, #d1c4e9);
+    color: #6a1b9a;
+    font-size: 18px;
+  }
+  button.eq {
+    background: linear-gradient(145deg, #ff8a80, #ff5252);
+    color: #fff;
+    font-size: 26px;
+    box-shadow:
+      0 4px 0 #d32f2f,
+      0 6px 12px rgba(255,82,82,.35);
+  }
+  button.eq:active {
+    box-shadow:
+      0 0 0 #d32f2f,
+      0 2px 4px rgba(255,82,82,.35);
+  }
+  button.zero { grid-column: span 2; }
+
+  /* 模式切换按钮 */
+  .mode-toggle {
+    flex-shrink: 0;
+    text-align: center;
+    margin-bottom: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  .mode-toggle button {
+    height: 32px;
+    font-size: 14px;
+    border-radius: 16px;
+    padding: 0 16px;
+    background: linear-gradient(145deg, #ede7f6, #d1c4e9);
+    color: #6a1b9a;
+    box-shadow: 0 2px 0 #b39ddb, 0 3px 6px rgba(106,27,154,.2);
+  }
+  .mode-toggle button:active {
+    box-shadow: 0 0 0 #b39ddb, 0 1px 2px rgba(106,27,154,.2);
+  }
+  .mode-toggle button.active {
+    background: linear-gradient(145deg, #ce93d8, #ab47bc);
+    color: #fff;
+  }
+
+  /* 科学模式：5列布局 */
+  .calc.scientific .buttons {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .calc.scientific { width: 380px; }
+
+  .btn-sci { display: none; }
+  .calc.scientific .btn-sci { display: block; }
+
+  /* 单位换算面板 */
+  .unit-panel {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100vh - 40px);
+    background: rgba(255,255,255,.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 32px;
+    padding: 20px;
+    flex-direction: column;
+    z-index: 100;
+    animation: slideIn .25s ease;
+    box-shadow: 0 20px 50px rgba(240, 140, 180, .3);
+  }
+  .calc.show-unit .unit-panel { display: flex; }
+  .unit-panel h3 {
+    font-size: 18px;
+    color: #d81b60;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .unit-panel h3 button.close-btn {
+    background: linear-gradient(145deg, #e8eaf6, #c5cae9);
+    color: #3949ab;
+    box-shadow: 0 2px 0 #9fa8da, 0 2px 4px rgba(92,107,192,.2);
+    font-size: 16px;
+    padding: 0 8px;
+    line-height: 1;
+    height: 28px;
+    border-radius: 14px;
+  }
+  .unit-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .unit-tabs button {
+    height: 28px;
+    font-size: 13px;
+    padding: 0 12px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #e8eaf6, #c5cae9);
+    color: #5c6bc0;
+    box-shadow: 0 2px 0 #9fa8da;
+  }
+  .unit-tabs button.active {
+    background: linear-gradient(145deg, #ce93d8, #ab47bc);
+    color: #fff;
+    box-shadow: 0 2px 0 #7b1fa2;
+  }
+  .unit-body {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 14px;
+  }
+  .unit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .unit-row label {
+    flex: 0 0 60px;
+    color: #7b4a7a;
+    font-size: 13px;
+  }
+  .unit-row input {
+    flex: 1;
+    height: 36px;
+    border: 2px solid rgba(244,143,177,.3);
+    border-radius: 12px;
+    padding: 0 10px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #fff;
+    color: #5d4037;
+    outline: none;
+  }
+  .unit-row input:focus { border-color: #f48fb1; }
+
+  /* 日期计算面板 */
+  .date-panel {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100vh - 40px);
+    background: rgba(255,255,255,.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 32px;
+    padding: 20px;
+    flex-direction: column;
+    z-index: 100;
+    animation: slideIn .25s ease;
+    box-shadow: 0 20px 50px rgba(240, 140, 180, .3);
+  }
+  .calc.show-date .date-panel { display: flex; }
+  .date-panel h3 {
+    font-size: 18px;
+    color: #d81b60;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .date-panel h3 button.close-btn {
+    background: linear-gradient(145deg, #e8eaf6, #c5cae9);
+    color: #3949ab;
+    box-shadow: 0 2px 0 #9fa8da, 0 2px 4px rgba(92,107,192,.2);
+    font-size: 16px;
+    padding: 0 8px;
+    line-height: 1;
+    height: 28px;
+    border-radius: 14px;
+  }
+  .date-body {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 14px;
+    color: #7b4a7a;
+  }
+  .date-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .date-row label {
+    flex: 0 0 80px;
+    color: #7b4a7a;
+    font-size: 13px;
+  }
+  .date-row input {
+    flex: 1;
+    height: 36px;
+    border: 2px solid rgba(244,143,177,.3);
+    border-radius: 12px;
+    padding: 0 10px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #fff;
+    color: #5d4037;
+    outline: none;
+  }
+  .date-row input:focus { border-color: #f48fb1; }
+  .date-result {
+    margin-top: 12px;
+    padding: 14px;
+    background: linear-gradient(145deg, #fff5fa, #fce4ec);
+    border-radius: 14px;
+    font-size: 15px;
+    color: #d81b60;
+    font-weight: 600;
+    text-align: center;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  /* 历史记录 */
+  .history-panel {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100vh - 40px);
+    background: rgba(255,255,255,.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 32px;
+    padding: 20px;
+    flex-direction: column;
+    z-index: 100;
+    animation: slideIn .25s ease;
+    box-shadow: 0 20px 50px rgba(240, 140, 180, .3);
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translate(-50%, -50%) translateY(-12px) scale(.97); }
+    to   { opacity: 1; transform: translate(-50%, -50%) translateY(0) scale(1); }
+  }
+  .calc.show-history .history-panel { display: flex; }
+  .history-panel h3 {
+    font-size: 18px;
+    color: #d81b60;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .history-panel h3 .h-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .history-panel h3 button {
+    height: 28px; font-size: 12px; padding: 0 10px; border-radius: 14px;
+    background: linear-gradient(145deg, #ffcdd2, #ef9a9a);
+    color: #c62828; box-shadow: 0 2px 0 #ef5350, 0 2px 4px rgba(239,83,80,.2);
+  }
+  .history-panel h3 button.close-btn {
+    background: linear-gradient(145deg, #e8eaf6, #c5cae9);
+    color: #3949ab;
+    box-shadow: 0 2px 0 #9fa8da, 0 2px 4px rgba(92,107,192,.2);
+    font-size: 16px;
+    padding: 0 8px;
+    line-height: 1;
+  }
+  .history-list {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 14px;
+    color: #7b4a7a;
+    -webkit-overflow-scrolling: touch;
+  }
+  .history-item {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(244,143,177,.15);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background .15s;
+  }
+  .history-item:hover { background: rgba(244,143,177,.08); }
+  .history-item .he { color: #c98fb0; font-size: 12px; }
+  .history-item .hr { color: #d81b60; font-weight: 700; font-size: 16px; text-align: right; }
+
+  /* 主题切换 */
+  body.theme-dark {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  }
+  body.theme-dark .calc {
+    background: rgba(30,30,50,.85);
+    border-color: rgba(100,100,150,.3);
+  }
+  body.theme-dark .display {
+    background: linear-gradient(180deg, #1e1e3a, #16213e);
+    border-color: rgba(100,100,200,.25);
+    box-shadow: inset 0 3px 10px rgba(0,0,0,.3);
+  }
+  body.theme-dark .display .result { color: #ff80ab; }
+  body.theme-dark .display .expr { color: #b39ddb; }
+  body.theme-dark button {
+    background: linear-gradient(145deg, #2a2a4a, #1e1e3a);
+    color: #e0e0ff;
+    box-shadow: 0 4px 0 #4a4a6a, 0 6px 12px rgba(0,0,0,.3);
+  }
+  body.theme-dark button:active {
+    box-shadow: 0 0 0 #4a4a6a, 0 2px 4px rgba(0,0,0,.3);
+  }
+  body.theme-dark button.op { background: linear-gradient(145deg, #3a2a4a, #2a1a3a); color: #ff80ab; }
+  body.theme-dark button.fn { background: linear-gradient(145deg, #2a2a5a, #1a1a3a); color: #b39ddb; }
+  body.theme-dark button.eq { background: linear-gradient(145deg, #c62828, #8e0000); color: #fff; }
+  body.theme-dark .mascot { filter: drop-shadow(0 0 6px rgba(255,128,171,.3)); }
+  body.theme-dark .history-panel,
+  body.theme-dark .unit-panel,
+  body.theme-dark .date-panel {
+    background: rgba(30,30,50,.97);
+  }
+  body.theme-dark .history-item { border-bottom-color: rgba(100,100,200,.15); }
+  body.theme-dark .history-item:hover { background: rgba(100,100,200,.08); }
+  body.theme-dark .history-item .he { color: #b39ddb; }
+  body.theme-dark .history-item .hr { color: #ff80ab; }
+  body.theme-dark .history-panel h3 { color: #ff80ab; }
+  body.theme-dark .unit-panel h3 { color: #ff80ab; }
+  body.theme-dark .date-panel h3 { color: #ff80ab; }
+  body.theme-dark .unit-row input,
+  body.theme-dark .date-row input {
+    background: #1e1e3a;
+    color: #e0e0ff;
+    border-color: rgba(100,100,200,.3);
+  }
+  body.theme-dark .unit-tabs button {
+    background: linear-gradient(145deg, #2a2a5a, #1a1a3a);
+    color: #b39ddb;
+  }
+  body.theme-dark .unit-tabs button.active {
+    background: linear-gradient(145deg, #7b1fa2, #4a148c);
+    color: #fff;
+  }
+  body.theme-dark .date-result {
+    background: linear-gradient(145deg, #1e1e3a, #16213e);
+    color: #ff80ab;
+  }
+
+  /* 打字指示器：计算时小表情的动画 */
+  .typing-dots::after {
+    content: '···';
+    animation: typing 1s steps(4, end) infinite;
+    letter-spacing: 2px;
+  }
+  @keyframes typing {
+    0%, 100% { opacity: .3; }
+    50% { opacity: 1; }
+  }
+
+  /* 复制成功提示 */
+  .toast {
+    position: fixed;
+    bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(0,0,0,.75);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    opacity: 0;
+    transition: all .3s;
+    z-index: 200;
+    pointer-events: none;
+    max-width: 80vw;
+    text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* 彩带 */
+  .confetti {
+    position: fixed;
+    top: -10px;
+    width: 10px; height: 14px;
+    z-index: 99;
+    pointer-events: none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* 计算器网格分组标题 */
+  .grid-section-title {
+    grid-column: 1 / -1;
+    font-size: 11px;
+    color: #d7b0c9;
+    text-align: center;
+    margin-top: 2px;
+    margin-bottom: -4px;
+    letter-spacing: 2px;
+  }
+
+
+  /* 音效面板 */
+  .sound-panel { width: 360px; }
+  .sound-panel .panel-body { padding-top: 8px; }
+  .sound-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 9px;
+  }
+  .sound-row label { flex: 0 0 60px; font-size: 12px; color: #6a1b9a; font-weight: 700; }
+  body.theme-dark .sound-row label { color: #f48fb1; }
+  .sound-row input[type=range] {
+    flex: 1; height: 4px; -webkit-appearance: none; appearance: none;
+    background: linear-gradient(90deg,#ab47bc,#f48fb1); border-radius: 4px; outline: none;
+  }
+  .sound-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; border: 3px solid #ab47bc; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.3);
+  }
+  .sound-row input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; border: 3px solid #ab47bc; cursor: pointer;
+  }
+  .vol-val { flex: 0 0 40px; font-size: 11px; color: #888; text-align: right; }
+  .sound-section-title {
+    font-size: 12px; font-weight: 800; color: #ab47bc;
+    margin: 12px 0 7px; padding-left: 6px; border-left: 3px solid #f48fb1;
+  }
+  body.theme-dark .sound-section-title { color: #f48fb1; }
+  .preset-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 4px;
+  }
+  .preset-card {
+    display: flex; align-items: center; gap: 6px;
+    background: linear-gradient(145deg,#fce4ec,#f3e5f5);
+    border: 2px solid #e1bee7; border-radius: 10px;
+    padding: 6px 8px; cursor: pointer; transition: all .15s;
+    user-select: none;
+  }
+  body.theme-dark .preset-card { background: linear-gradient(145deg,#2a1a3a,#1a1a2e); border-color: #4a148c; }
+  .preset-card:hover { transform: translateY(-1px); border-color: #f48fb1; }
+  .preset-card.active { border-color: #e91e63; background: linear-gradient(145deg,#f8bbd0,#e1bee7); box-shadow: 0 2px 8px rgba(233,30,99,.3); }
+  body.theme-dark .preset-card.active { background: linear-gradient(145deg,#3a1a4a,#2a1a3a); }
+  .preset-card .p-emoji { font-size: 16px; line-height: 1; }
+  .preset-card .p-name { font-size: 11px; color: #6a1b9a; font-weight: 700; flex: 1; }
+  body.theme-dark .preset-card .p-name { color: #f48fb1; }
+  .preset-card .p-play {
+    font-size: 10px; padding: 2px 6px; border-radius: 6px;
+    background: #ab47bc; color: #fff; border: none; cursor: pointer; flex: 0 0 auto;
+  }
+  .preset-card .p-play:active { transform: scale(.9); }
+  .sound-tip { font-size: 10px; color: #999; text-align: center; margin-top: 10px; line-height: 1.6; }
+  /* 音效开关 */
+  .mode-toggle button.sound-on { background: linear-gradient(145deg, #c8e6c9, #a5d6a7); color: #2e7d32; }
+  .mode-toggle button.sound-off { background: linear-gradient(145deg, #ffcdd2, #ef9a9a); color: #c62828; }
+
+  /* 跑马灯彩蛋 */
+  .marquee-egg {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 24px;
+    overflow: hidden;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  .marquee-egg span {
+    display: inline-block;
+    white-space: nowrap;
+    animation: marquee 20s linear infinite;
+    font-size: 14px;
+    color: #f48fb1;
+  }
+  @keyframes marquee {
+    from { transform: translateX(100vw); }
+    to   { transform: translateX(-100%); }
+  }
+
+  /* ============ 通用面板样式 ============ */
+  .panel-base {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 340px;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100vh - 40px);
+    background: rgba(255,255,255,.97);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 28px;
+    padding: 18px 18px 16px;
+    flex-direction: column;
+    z-index: 100;
+    animation: panelPop .25s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 24px 60px rgba(120, 80, 200, .35);
+    border: 2px solid rgba(255,255,255,.7);
+  }
+  @keyframes panelPop {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(.9) translateY(10px); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1) translateY(0); }
+  }
+  .calc.show-prog .prog-panel,
+  .calc.show-stats .stats-panel,
+  .calc.show-eq .eq-panel,
+  .calc.show-geo .geo-panel,
+  .calc.show-fin .fin-panel,
+  .calc.show-graph .graph-panel { display: flex; }
+  .calc.show-sound .sound-panel { display: flex; }
+  .sound-panel .close-btn { margin-left: auto; }
+  .panel-base h3 {
+    font-size: 17px;
+    color: #6a1b9a;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    font-size: 13px;
+    color: #5d4037;
+  }
+  .panel-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .panel-row label {
+    flex: 0 0 72px;
+    color: #7b4a7a;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .panel-row input,
+  .panel-body textarea,
+  .panel-body select {
+    flex: 1;
+    border: 2px solid rgba(186,104,200,.3);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+    color: #4a148c;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .panel-row input.mono { font-family: 'Courier New', monospace; letter-spacing: 1px; }
+  .panel-body textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 56px;
+    margin-bottom: 10px;
+  }
+  .panel-row input:focus,
+  .panel-body textarea:focus,
+  .panel-body select:focus { border-color: #ba68c8; box-shadow: 0 0 0 3px rgba(186,104,200,.15); }
+  .panel-sub {
+    font-size: 12px;
+    color: #8e6a9e;
+    margin: 6px 0 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  .panel-sub button {
+    height: 26px;
+    font-size: 11px;
+    padding: 0 8px;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #e1bee7, #ce93d8);
+    color: #4a148c;
+    box-shadow: 0 2px 0 #ab47bc;
+  }
+  .panel-sub button:active { transform: translateY(2px); box-shadow: 0 0 0 #ab47bc; }
+  .panel-sub select {
+    flex: 0 1 auto;
+    width: auto;
+    height: 26px;
+    padding: 0 6px;
+  }
+  .panel-sub .chk { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .panel-sub .chk input { width: auto; flex: none; }
+  .panel-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .panel-tabs button {
+    height: 28px;
+    font-size: 12px;
+    padding: 0 10px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #f3e5f5, #e1bee7);
+    color: #7b1fa2;
+    box-shadow: 0 2px 0 #ce93d8;
+  }
+  .panel-tabs button.active {
+    background: linear-gradient(145deg, #ba68c8, #8e24aa);
+    color: #fff;
+    box-shadow: 0 2px 0 #6a1b9a;
+  }
+  .panel-btn {
+    width: 100%;
+    height: 40px;
+    font-size: 15px;
+    border-radius: 14px;
+    margin: 4px 0 10px;
+    background: linear-gradient(145deg, #ce93d8, #ab47bc) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 0 #7b1fa2 !important;
+    font-weight: bold;
+  }
+  .panel-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #7b1fa2 !important; }
+  .panel-result {
+    background: linear-gradient(145deg, #f3e5f5, #ede7f6);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #4a148c;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 20px;
+  }
+  .panel-result .num { font-weight: bold; color: #d81b60; }
+  .panel-result .lbl { color: #7b4a7a; }
+  .eq-body .panel-row,
+  .geo-body .panel-row,
+  .fin-body .panel-row { margin-bottom: 8px; }
+  .geo-body select { flex: 1; }
+  .hint { font-size: 12px; color: #9e7aa8; margin: 0 0 4px; }
+  .panel-body::-webkit-scrollbar { width: 6px; }
+  .panel-body::-webkit-scrollbar-thumb { background: rgba(186,104,200,.4); border-radius: 3px; }
+
+  /* 第二行科学按钮：默认隐藏，科学模式才显示 */
+  .btn-sci2 { display: none; }
+  .calc.scientific .btn-sci2 { display: block; }
+
+  /* 功能入口超过一屏时滚动 */
+  .mode-toggle { max-height: 96px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ============ 函数图像面板样式 ============ */
+  .graph-panel { width: 380px; }
+  .graph-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .graph-presets button {
+    height: 26px;
+    font-size: 11px;
+    padding: 0 9px;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #e1bee7, #ce93d8);
+    color: #4a148c;
+    box-shadow: 0 2px 0 #ab47bc;
+    flex: 0 0 auto;
+  }
+  .graph-presets button:active { transform: translateY(2px); box-shadow: 0 0 0 #ab47bc; }
+  .graph-presets button.active {
+    background: linear-gradient(145deg, #ba68c8, #8e24aa);
+    color: #fff;
+    box-shadow: 0 2px 0 #6a1b9a;
+  }
+  .graph-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .graph-input-row label {
+    color: #7b4a7a;
+    font-size: 14px;
+    font-weight: bold;
+  }
+  .graph-input-row input {
+    flex: 1;
+    border: 2px solid rgba(186,104,200,.4);
+    border-radius: 10px;
+    padding: 7px 10px;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    outline: none;
+    background: #fff;
+    color: #4a148c;
+    box-sizing: border-box;
+  }
+  .graph-input-row input:focus { border-color: #ba68c8; box-shadow: 0 0 0 3px rgba(186,104,200,.15); }
+  .panel-btn-inline {
+    height: 32px;
+    font-size: 13px;
+    padding: 0 14px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #ce93d8, #ab47bc) !important;
+    color: #fff !important;
+    box-shadow: 0 3px 0 #7b1fa2 !important;
+    flex: 0 0 auto;
+    font-weight: bold;
+  }
+  .panel-btn-inline:active { transform: translateY(2px); box-shadow: 0 1px 0 #7b1fa2 !important; }
+  .graph-range {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #8e6a9e;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .graph-range input {
+    width: 62px;
+    border: 2px solid rgba(186,104,200,.3);
+    border-radius: 8px;
+    padding: 4px 6px;
+    font-size: 12px;
+    text-align: center;
+    background: #fff;
+    color: #4a148c;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .graph-range input:focus { border-color: #ba68c8; }
+  .graph-range .chk { display: inline-flex; align-items: center; gap: 3px; cursor: pointer; }
+  .canvas-wrap {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid rgba(186,104,200,.3);
+    background: #fafafa;
+    touch-action: none;
+  }
+  .canvas-wrap canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: crosshair;
+  }
+  .canvas-hint {
+    position: absolute;
+    bottom: 4px; right: 8px;
+    font-size: 10px;
+    color: #999;
+    pointer-events: none;
+    background: rgba(255,255,255,.7);
+    padding: 1px 6px;
+    border-radius: 6px;
+  }
+  .graph-info {
+    margin-top: 8px;
+    background: linear-gradient(145deg, #f3e5f5, #ede7f6);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #4a148c;
+    line-height: 1.6;
+    min-height: 18px;
+    white-space: pre-wrap;
+  }
+  .graph-info .num { font-weight: bold; color: #d81b60; }
+  .graph-info .lbl { color: #7b4a7a; }
+
+  body.theme-dark .graph-presets button {
+    background: linear-gradient(145deg, #4a2a6a, #3a1a5a);
+    color: #ce93d8;
+    box-shadow: 0 2px 0 #7b1fa2;
+  }
+  body.theme-dark .graph-presets button.active {
+    background: linear-gradient(145deg, #7b1fa2, #4a148c);
+    color: #fff;
+  }
+  body.theme-dark .graph-input-row input,
+  body.theme-dark .graph-range input {
+    background: #1e1e3a;
+    color: #e1bee7;
+    border-color: rgba(150,120,220,.35);
+  }
+  body.theme-dark .canvas-wrap {
+    background: #0f0f1e;
+    border-color: rgba(150,120,220,.3);
+  }
+  body.theme-dark .graph-info {
+    background: linear-gradient(145deg, #1e1e3a, #16213e);
+    color: #ce93d8;
+  }
+  body.theme-dark .graph-info .num { color: #ff80ab; }
+  body.theme-dark .canvas-hint { background: rgba(30,30,50,.7); color: #b39ddb; }
+
+  body.theme-dark .panel-base {
+    background: rgba(30,28,55,.97);
+    border-color: rgba(120,100,200,.3);
+  }
+  body.theme-dark .panel-base h3 { color: #ce93d8; }
+  body.theme-dark .panel-row input,
+  body.theme-dark .panel-body textarea,
+  body.theme-dark .panel-body select {
+    background: #1e1e3a;
+    color: #e1bee7;
+    border-color: rgba(150,120,220,.35);
+  }
+  body.theme-dark .panel-sub { color: #b39ddb; }
+  body.theme-dark .panel-sub button {
+    background: linear-gradient(145deg, #4a2a6a, #3a1a5a);
+    color: #ce93d8;
+    box-shadow: 0 2px 0 #7b1fa2;
+  }
+  body.theme-dark .panel-tabs button {
+    background: linear-gradient(145deg, #2a2a5a, #1a1a3a);
+    color: #b39ddb;
+    box-shadow: 0 2px 0 #6a1b9a;
+  }
+  body.theme-dark .panel-tabs button.active {
+    background: linear-gradient(145deg, #7b1fa2, #4a148c);
+    color: #fff;
+  }
+  body.theme-dark .panel-result {
+    background: linear-gradient(145deg, #1e1e3a, #16213e);
+    color: #ce93d8;
+  }
+  body.theme-dark .panel-result .num { color: #ff80ab; }
+  body.theme-dark .hint { color: #b39ddb; }
+</style>
+</head>
+<body>
+
+<div class="deco">⭐</div>
+<div class="deco">💖</div>
+<div class="deco">🍬</div>
+<div class="deco">🌸</div>
+<div class="deco">✨</div>
+<div class="deco">🦄</div>
+<div class="deco">🌙</div>
+<div class="deco">☁️</div>
+
+<div class="marquee-egg"><span>🧮 萌萌计算器 · 算算更健康 · ✨ 42 是终极答案 · 520 我 ❤️ 你 · π 是 🥧 · (っ'ω')っ 💕</span></div>
+
+<div class="calc" id="calc">
+  <div class="mascot-wrap">
+    <span class="mascot" id="mascot" title="点我摸摸～">(´｡• ᵕ •｡`)</span>
+  </div>
+
+  <div class="mode-toggle">
+    <button id="toggleSci">🔬 科学</button>
+    <button id="toggleTheme">🌙 暗色</button>
+    <button id="toggleBg">🖼️ 换图</button>
+    <button id="toggleUnit">📐 换算</button>
+    <button id="toggleDate">📅 日期</button>
+    <button id="toggleSound" class="sound-on">🔔 音效</button>
+    <button id="toggleVoice">🎀 萝莉音</button>
+    <button id="toggleHistory">📋 历史</button>
+    <button id="toggleProgrammer">💻 进制</button>
+    <button id="toggleStats">📊 统计</button>
+    <button id="toggleEquation">🧩 方程</button>
+    <button id="toggleGeometry">📐 几何</button>
+    <button id="toggleFinance">💰 金融</button>
+    <button id="toggleGraph">📈 绘图</button>
+  </div>
+
+  <div class="display">
+    <div class="expr" id="expr"></div>
+    <div class="result" id="result">0</div>
+  </div>
+
+  <div class="buttons">
+    <!-- 进阶函数行（科学模式） -->
+    <button class="fn btn-sci btn-sci2" data-k="sinh">sinh</button>
+    <button class="fn btn-sci btn-sci2" data-k="cosh">cosh</button>
+    <button class="fn btn-sci btn-sci2" data-k="tanh">tanh</button>
+    <button class="fn btn-sci btn-sci2" data-k="mod">mod</button>
+    <button class="fn btn-sci btn-sci2" data-k="cbrt">∛</button>
+
+    <!-- 统计函数行（科学模式） -->
+    <button class="fn btn-sci" data-k="rand">Rand</button>
+    <button class="fn btn-sci" data-k="round">Round</button>
+    <button class="fn btn-sci" data-k="ceil">Ceil</button>
+    <button class="fn btn-sci" data-k="floor">Floor</button>
+    <button class="fn btn-sci" data-k="nPr">nPr</button>
+
+    <!-- 科学函数行 -->
+    <button class="fn btn-sci" data-k="sin">sin</button>
+    <button class="fn btn-sci" data-k="cos">cos</button>
+    <button class="fn btn-sci" data-k="tan">tan</button>
+    <button class="fn btn-sci" data-k="sqrt">√</button>
+    <button class="fn btn-sci" data-k="sq">x²</button>
+
+    <button class="fn btn-sci" data-k="asin">sin⁻¹</button>
+    <button class="fn btn-sci" data-k="acos">cos⁻¹</button>
+    <button class="fn btn-sci" data-k="atan">tan⁻¹</button>
+    <button class="fn btn-sci" data-k="pow">xʸ</button>
+    <button class="fn btn-sci" data-k="fact">x!</button>
+
+    <button class="fn btn-sci" data-k="log">log</button>
+    <button class="fn btn-sci" data-k="ln">ln</button>
+    <button class="fn btn-sci" data-k="inv">1/x</button>
+    <button class="fn btn-sci" data-k="abs">|x|</button>
+    <button class="fn btn-sci" data-k="nCr">nCr</button>
+
+    <button class="fn btn-sci" data-k="pi">π</button>
+    <button class="fn btn-sci" data-k="e">e</button>
+    <button class="fn btn-sci" data-k="exp">eˣ</button>
+    <button class="fn btn-sci" data-k="tenPow">10ˣ</button>
+    <button class="fn btn-sci" data-k="twoPow">2ˣ</button>
+
+    <!-- 实用工具行 -->
+    <button class="fn btn-sci" data-k="±">±</button>
+    <button class="fn btn-sci" data-k="deg" id="degBtn">DEG</button>
+    <button class="fn btn-sci" data-k="M+">M+</button>
+    <button class="fn btn-sci" data-k="MR">MR</button>
+    <button class="fn btn-sci" data-k="MC">MC</button>
+
+    <!-- 基础行 -->
+    <button class="fn" data-k="C">C</button>
+    <button class="fn" data-k="back">⌫</button>
+    <button class="fn" data-k="%">%</button>
+    <button class="op" data-k="/">÷</button>
+
+    <button data-k="7">7</button>
+    <button data-k="8">8</button>
+    <button data-k="9">9</button>
+    <button class="op" data-k="*">×</button>
+
+    <button data-k="4">4</button>
+    <button data-k="5">5</button>
+    <button data-k="6">6</button>
+    <button class="op" data-k="-">−</button>
+
+    <button data-k="1">1</button>
+    <button data-k="2">2</button>
+    <button data-k="3">3</button>
+    <button class="op" data-k="+">+</button>
+
+    <button class="zero" data-k="0">0</button>
+    <button data-k=".">.</button>
+    <button class="eq" data-k="=">=</button>
+  </div>
+
+  <!-- 单位换算面板 -->
+  <div class="unit-panel" id="unitPanel">
+    <h3>
+      <span>📐 单位换算</span>
+      <button class="close-btn" id="closeUnit" title="关闭">✕</button>
+    </h3>
+    <div class="unit-tabs" id="unitTabs">
+      <button class="active" data-cat="length">📏 长度</button>
+      <button data-cat="weight">⚖️ 重量</button>
+      <button data-cat="temp">🌡️ 温度</button>
+      <button data-cat="area">📐 面积</button>
+      <button data-cat="speed">🚀 速度</button>
+    </div>
+    <div class="unit-body" id="unitBody"></div>
+  </div>
+
+  <!-- 日期计算面板 -->
+  <div class="date-panel" id="datePanel">
+    <h3>
+      <span>📅 日期计算</span>
+      <button class="close-btn" id="closeDate" title="关闭">✕</button>
+    </h3>
+    <div class="date-body">
+      <div class="date-row">
+        <label>起始日期</label>
+        <input type="date" id="dateStart">
+      </div>
+      <div class="date-row">
+        <label>结束日期</label>
+        <input type="date" id="dateEnd">
+      </div>
+      <div class="date-row">
+        <label>加/减天数</label>
+        <input type="number" id="dateOffset" placeholder="输入天数，可为负数">
+      </div>
+      <button id="calcDate" style="width:100%;margin-top:8px;height:40px;font-size:16px;">🧮 计算</button>
+      <div class="date-result" id="dateResult">选择日期后点击计算～</div>
+    </div>
+  </div>
+
+  <!-- 历史记录面板 -->
+  <div class="history-panel" id="historyPanel">
+    <h3>
+      <span id="historyTitle">📋 计算历史</span>
+      <span class="h-actions">
+        <button id="clearHistory">清空</button>
+        <button class="close-btn" id="closeHistory" title="关闭">✕</button>
+      </span>
+    </h3>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <!-- 进制转换面板 -->
+  <div class="panel-base prog-panel" id="progPanel">
+    <h3>
+      <span>💻 进制与位运算</span>
+      <button class="close-btn" id="closeProg" title="关闭">✕</button>
+    </h3>
+    <div class="panel-body">
+      <div class="panel-row">
+        <label>十进制 DEC</label>
+        <input type="text" id="progDec" placeholder="0">
+      </div>
+      <div class="panel-row">
+        <label>十六进制 HEX</label>
+        <input type="text" id="progHex" placeholder="0">
+      </div>
+      <div class="panel-row">
+        <label>八进制 OCT</label>
+        <input type="text" id="progOct" placeholder="0">
+      </div>
+      <div class="panel-row">
+        <label>二进制 BIN</label>
+        <input type="text" id="progBin" placeholder="0" class="mono">
+      </div>
+      <div class="panel-sub">字长：
+        <select id="progWord">
+          <option value="8">8 位</option>
+          <option value="16">16 位</option>
+          <option value="32" selected>32 位</option>
+          <option value="64">64 位</option>
+        </select>
+        <label class="chk"><input type="checkbox" id="progSigned" checked> 有符号(补码)</label>
+      </div>
+      <div class="panel-sub">位运算：
+        <button data-bit="and">A AND B</button>
+        <button data-bit="or">A OR B</button>
+        <button data-bit="xor">A XOR B</button>
+        <button data-bit="not">NOT A</button>
+        <button data-bit="shl">A&lt;&lt;n</button>
+        <button data-bit="shr">A&gt;&gt;n</button>
+      </div>
+      <div class="panel-row">
+        <label>A</label><input type="text" id="progA" value="255">
+      </div>
+      <div class="panel-row">
+        <label>B</label><input type="text" id="progB" value="15">
+      </div>
+      <div class="panel-row">
+        <label>n</label><input type="number" id="progn" value="2">
+      </div>
+      <div class="panel-result" id="progResult">结果会显示在这里～</div>
+    </div>
+  </div>
+
+  <!-- 统计面板 -->
+  <div class="panel-base stats-panel" id="statsPanel">
+    <h3>
+      <span>📊 统计计算</span>
+      <button class="close-btn" id="closeStats" title="关闭">✕</button>
+    </h3>
+    <div class="panel-body">
+      <p class="hint">输入数据（逗号、空格或换行分隔）：</p>
+      <textarea id="statsData" placeholder="1, 2, 3, 4, 5" rows="3">12, 15, 18, 20, 22, 25, 30</textarea>
+      <button id="statsCalc" class="panel-btn">🧮 计算统计</button>
+      <div class="panel-result" id="statsResult">结果会显示在这里～</div>
+    </div>
+  </div>
+
+  <!-- 方程求解面板 -->
+  <div class="panel-base eq-panel" id="eqPanel">
+    <h3>
+      <span>🧩 方程求解</span>
+      <button class="close-btn" id="closeEq" title="关闭">✕</button>
+    </h3>
+    <div class="panel-body">
+      <div class="panel-tabs">
+        <button data-eq="quad" class="active">一元二次方程</button>
+        <button data-eq="linear2">二元一次方程组</button>
+        <button data-eq="linear3">三元一次方程组</button>
+        <button data-eq="cubic">一元三次方程</button>
+      </div>
+      <div class="eq-body" id="eqBody"></div>
+      <button id="eqCalc" class="panel-btn">🧮 求解</button>
+      <div class="panel-result" id="eqResult">结果会显示在这里～</div>
+    </div>
+  </div>
+
+  <!-- 几何面板 -->
+  <div class="panel-base geo-panel" id="geoPanel">
+    <h3>
+      <span>📐 几何计算</span>
+      <button class="close-btn" id="closeGeo" title="关闭">✕</button>
+    </h3>
+    <div class="panel-body">
+      <div class="panel-tabs">
+        <button data-geo="circle" class="active">圆</button>
+        <button data-geo="triangle">三角形</button>
+        <button data-geo="rect">矩形</button>
+        <button data-geo="poly">正多边形</button>
+      </div>
+      <div class="geo-body" id="geoBody"></div>
+      <div class="panel-result" id="geoResult">结果会显示在这里～</div>
+    </div>
+  </div>
+
+  <!-- 金融面板 -->
+  <div class="panel-base fin-panel" id="finPanel">
+    <h3>
+      <span>💰 金融计算</span>
+      <button class="close-btn" id="closeFin" title="关闭">✕</button>
+    </h3>
+    <div class="panel-body">
+      <div class="panel-tabs">
+        <button data-fin="loan" class="active">等额本息</button>
+        <button data-fin="compound">复利</button>
+        <button data-fin="discount">折现</button>
+        <button data-fin="vat">税费/小费</button>
+      </div>
+      <div class="fin-body" id="finBody"></div>
+      <div class="panel-result" id="finResult">结果会显示在这里～</div>
+    </div>
+  </div>
+
+  <!-- 函数图像绘制面板 -->
+  <div class="panel-base graph-panel" id="graphPanel">
+    <h3>
+      <span>📈 函数图像</span>
+      <button class="close-btn" id="closeGraph" title="关闭">✕</button>
+    </h3>
+    <div class="panel-body">
+      <div class="graph-presets">
+        <button data-pre="x^2">x²</button>
+        <button data-pre="x^3">x³</button>
+        <button data-pre="sin(x)">sin x</button>
+        <button data-pre="cos(x)">cos x</button>
+        <button data-pre="tan(x)">tan x</button>
+        <button data-pre="1/x">1/x</button>
+        <button data-pre="sqrt(x)">√x</button>
+        <button data-pre="abs(x)">|x|</button>
+        <button data-pre="log(x)">ln x</button>
+        <button data-pre="exp(x)">eˣ</button>
+        <button data-pre="2^x">2ˣ</button>
+        <button data-pre="x^2-4">x²-4</button>
+      </div>
+      <div class="graph-input-row">
+        <label>y =</label>
+        <input type="text" id="graphExpr" value="sin(x)" placeholder="输入关于 x 的表达式，如 x^2+2*x-1">
+        <button id="graphPlot" class="panel-btn-inline">绘制</button>
+      </div>
+      <div class="graph-range">
+        <label>x 范围</label>
+        <input type="number" id="graphXmin" value="-10" step="0.5">
+        <span>~</span>
+        <input type="number" id="graphXmax" value="10" step="0.5">
+        <label class="chk"><input type="checkbox" id="graphGrid" checked> 网格</label>
+      </div>
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="graphCanvas" width="600" height="360"></canvas>
+        <div class="canvas-hint" id="canvasHint">在画布上拖动可平移，滚轮可缩放</div>
+      </div>
+      <div class="graph-info" id="graphInfo">等待绘制～</div>
+    </div>
+  </div>
+</div>
+
+<!-- 复制成功提示 -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const resultEl = document.getElementById('result');
+  const exprEl   = document.getElementById('expr');
+  const mascotEl = document.getElementById('mascot');
+  let current = '0';
+  let overwrite = true;
+  let storedValue = null;
+  let pendingOp = null;
+  let lastRhs = null;
+  let justCalculated = false;
+  let history = [];
+  let memory = 0;
+  let degMode = true;
+  let soundEnabled = true;
+
+  const mascots = {
+    idle:    ['(´｡• ᵕ •｡`)', '(◕‿◕✿)', '(≧▽≦)', '(｡♥‿♥｡)', '(｡◕‿◕｡)', '(✿◡‿◡)'],
+    calc:    ['(ง •_•)ง', 'ヽ(•‿•)ノ', '(◕ᴗ◕✿)', '┗|｀*•.¸)┓'],
+    happy:   ['(★^O^★)', '(✿◡‿◡)', '(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧', '♪(^∇^*)', '(ﾉ´ヮ`)ﾉ*: ･ﾟ', '(˘▾˘)~♪'],
+    error:   ['(╥﹏╥)', '(＃`Д´)', '(¬_¬)', '(╯°□°)╯'],
+    zero:    ['(⊙_⊙)', '(；´Д｀)', 'ε=ε=ε=┌(;*´Д`)ﾉ', '(´-ω-`)'],
+    big:     ['(☉_☉)', '(✪ω✪)', '∑d(⌐■_■)', '( ﾟдﾟ)'],
+    pi:      ['🥧(◕‿◕)', '(◕ᴗ◕)π', '~(>_<~)π'],
+    night:   ['(🌙- _)ᐝ', '(´-ω-｀)💤', '(-_-)💤'],
+    hi:      ['(・∀・)', '(✿◠‿◠)', '( ´ ▽ ` )ノ'],
+    wave:    ['(手)•ᴗ•`)', '( ´ ▽ ` )ﾉ', '(◕‿◕)ﾉ'],
+    think:   ['(🤔)', '(｡•́︿•̀｡)', '(・_・;)'],
+    love:    ['(♡˙︶˙♡)', '(´∀`)♡', '(｡♡‿♡｡)'],
+    dance:   ['(~‾▿‾)~', '┏(-_-)┛', '(ﾉ◕ω◕)ﾉ']
+  };
+
+  // ===== 音效系统 =====
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e) { audioCtx = null; }
+    }
+    return audioCtx;
+  }
+  // ===== 音效系统（采样 + 合成双引擎）=====
+  // 采样音效：真实录音（数字键/运算符/等号/清除/错误/开心/pop/whoosh/提示）
+  const SAMPLE_KEYS = ['click','op','equal','clear','error','happy','pop','whoosh','notice'];
+  const sampleBuffers = {};
+  let samplesReady = false;
+
+  async function loadSamples() {
+    if (samplesReady) return;
+    try {
+      const SR = 44100;
+      // 内嵌采样：将 WAV 转成 base64 打包，运行时解码
+      const blobs = {};
+      // 用 fetch 加载同目录 wav 文件（离线时回退到合成）
+      const tasks = SAMPLE_KEYS.map(async (k) => {
+        try {
+          const r = await fetch('sounds/kawaii_' + k + '.wav', { cache: 'force-cache' });
+          if (r.ok) {
+            const ab = await r.arrayBuffer();
+            sampleBuffers[k] = await getAudioCtx().decodeAudioData(ab.slice(0));
+          }
+        } catch(e) {}
+      });
+      await Promise.all(tasks);
+      samplesReady = true;
+    } catch(e) { samplesReady = false; }
+  }
+  // 页面加载后静默预加载
+  window.addEventListener('load', () => { setTimeout(loadSamples, 300); });
+  // 首次交互时立即加载
+  ['click','touchstart','keydown'].forEach(ev => {
+    document.addEventListener(ev, () => { if (!samplesReady) loadSamples(); }, { once: true, passive: true });
+  });
+
+  // 备用合成音（离线/加载失败时兜底）
+  function synthSound(type) {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    const now = ctx.currentTime;
+    const M = {
+      'click':   { f: 1320, d: 0.06, t: 'triangle', v: 0.16 },
+      'op':      { f: 660,  d: 0.08, t: 'sine',     v: 0.14 },
+      'equal':   { f: 1200, d: 0.1,  t: 'sine',     v: 0.16 },
+      'clear':   { f: 500,  d: 0.12, t: 'triangle', v: 0.14 },
+      'error':   { f: 200,  d: 0.18, t: 'sawtooth', v: 0.14 },
+      'happy':   { f: 1500, d: 0.12, t: 'sine',     v: 0.16 },
+      'pop':     { f: 900,  d: 0.05, t: 'sine',     v: 0.12 },
+      'whoosh':  { f: 400,  d: 0.12, t: 'sine',     v: 0.13 },
+      'notice':  { f: 1568, d: 0.13, t: 'sine',     v: 0.15 }
+    };
+    const c = M[type] || M['click'];
+    osc.type = c.t;
+    osc.frequency.setValueAtTime(c.f, now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(60, c.f * 0.5), now + c.d);
+    gain.gain.setValueAtTime(c.v * getKeyVol(), now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + c.d);
+    osc.start(now); osc.stop(now + c.d);
+  }
+
+  function playSampleSound(type) {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const buf = sampleBuffers[type];
+    if (!buf) { synthSound(type); return; }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.value = getKeyVol();
+    src.connect(g); g.connect(ctx.destination);
+    src.start();
+  }
+
+  // 音量配置
+  let volMaster = 0.7, volKey = 1.0, volVoice = 0.9;
+  function getKeyVol() { return Math.min(1, volMaster * volKey); }
+  function getVoiceVol() { return Math.min(1, volMaster * volVoice); }
+
+  // 按键音效预设（数字键、运算符、等号等走这个音色）
+  const KEY_SOUNDS = {
+    cute:    { name: '软萌短促', emoji: '🍬', base: 'click' },
+    crystal: { name: '水晶铃音', emoji: '🔔', base: 'notice' },
+    pop:     { name: '气泡弹跳', emoji: '🫧', base: 'pop' },
+    warm:    { name: '圆润温暖', emoji: '🧸', base: 'op' },
+    retro:   { name: '复古电子', emoji: '👾', base: 'equal' },
+    none:    { name: '静音',     emoji: '🤫', base: null }
+  };
+  let keySound = 'cute';
+
+  function playKeySound(type) {
+    if (!soundEnabled) return;
+    if (KEY_SOUNDS[keySound].base === null) return;
+    playSampleSound(KEY_SOUNDS[keySound].base || type);
+  }
+
+  // 萝莉语音
+  const VOICE_LINES = {
+    ok:    { name: '算对啦',     emoji: '🎀', file: 'loli_ok.wav' },
+    oops:  { name: '呜哇出错啦', emoji: '😣', file: 'loli_oops.wav' },
+    hi:    { name: '嗨~',        emoji: '👋', file: 'loli_hi.wav' },
+    love:  { name: '喜欢你哦',   emoji: '💕', file: 'loli_love.wav' },
+    huh:   { name: '嗯？',       emoji: '🤔', file: 'loli_huh.wav' },
+    wow:   { name: '好厉害',     emoji: '✨', file: 'loli_wow.wav' },
+    night: { name: '晚安',       emoji: '🌙', file: 'loli_night.wav' }
+  };
+  let voiceEnabled = true;
+  const voiceBuffers = {};
+  let voicesReady = false;
+
+  async function loadVoices() {
+    if (voicesReady) return;
+    try {
+      const tasks = Object.keys(VOICE_LINES).map(async (k) => {
+        try {
+          const r = await fetch('sounds/' + VOICE_LINES[k].file, { cache: 'force-cache' });
+          if (r.ok) {
+            const ab = await r.arrayBuffer();
+            voiceBuffers[k] = await getAudioCtx().decodeAudioData(ab.slice(0));
+          }
+        } catch(e) {}
+      });
+      await Promise.all(tasks);
+      voicesReady = true;
+    } catch(e) { voicesReady = false; }
+  }
+  window.addEventListener('load', () => { setTimeout(loadVoices, 400); });
+  ['click','touchstart','keydown'].forEach(ev => {
+    document.addEventListener(ev, () => { if (!voicesReady) loadVoices(); }, { once: true, passive: true });
+  });
+
+  function speak(line) {
+    if (!soundEnabled || !voiceEnabled) return;
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const buf = voiceBuffers[line];
+    if (!buf) return;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.value = getVoiceVol();
+    src.connect(g); g.connect(ctx.destination);
+    src.start();
+  }
+
+  // 对外统一接口
+  function playSound(type) {
+    if (!soundEnabled) return;
+    if (type === 'voice_hi') { speak('hi'); return; }
+    if (type === 'voice_love') { speak('love'); return; }
+    playKeySound(type);
+  }
+
+  // ===== 表情系统 =====
+  let mascotTimer = null;
+  let petCount = 0;
+  let lastState = 'idle';
+  let idleTimer = null;
+
+  function setMood(state, effect) {
+    const arr = mascots[state] || mascots.idle;
+    const text = arr[Math.floor(Math.random() * arr.length)];
+    mascotEl.textContent = text;
+    mascotEl.className = 'mascot' + (effect ? ' ' + effect : '');
+    lastState = state;
+    if (effect) {
+      setTimeout(() => { if (mascotEl.className.includes(effect)) mascotEl.className = 'mascot'; }, 700);
+    }
+    clearTimeout(mascotTimer);
+    mascotTimer = setTimeout(() => { if (lastState !== 'happy') { setMood('idle'); } }, 4000);
+  }
+
+  // 空闲时随机换表情
+  function startIdleMood() {
+    clearInterval(idleTimer);
+    idleTimer = setInterval(() => {
+      if (lastState === 'idle' && Math.random() > 0.5) {
+        setMood('idle');
+      }
+    }, 3500);
+  }
+
+  setMood('hi');
+  setTimeout(() => setMood('idle'), 2000);
+  startIdleMood();
+
+  mascotEl.addEventListener('click', () => {
+    petCount++;
+    playSound('happy');
+    if (petCount >= 10) {
+      setMood('love', 'heart');
+      showToast('呜哇～最喜欢你了！(' + petCount + '次摸摸)');
+      petCount = 0;
+    } else if (petCount >= 5) {
+      setMood('happy', 'heart');
+      showToast('好痒呀～(' + petCount + '次摸摸)');
+    } else if (petCount >= 3) {
+      setMood('wave', 'popBig');
+      showToast('嘿嘿，继续摸 (' + petCount + '次)');
+    } else {
+      setMood('wave', 'popBig');
+      const msgs = ['嗨呀～', '摸到我啦！', 'ヾ(≧∇≦*)', '好开心～', '再来一下嘛～'];
+      showToast(msgs[petCount - 1] || '嗨！');
+    }
+  });
+
+  // ===== 数学工具 =====
+  function fixFloat(n) {
+    if (typeof n !== 'number' || !isFinite(n)) return n;
+    return parseFloat(n.toPrecision(12));
+  }
+
+  function fmt(n) {
+    if (n === '' || n === undefined || n === null) return '';
+    const num = fixFloat(Number(n));
+    if (typeof num !== 'number' || isNaN(num)) return String(n);
+    if (!isFinite(num)) return '∞';
+    if (Math.abs(num) > 1e15 || (Math.abs(num) < 1e-9 && num !== 0)) return num.toExponential(8);
+    let s = String(num);
+    if (s.includes('.') && s.split('.')[1].length > 10) {
+      s = String(parseFloat(num.toFixed(10)));
+    }
+    return s;
+  }
+
+  function safeEval(expr) {
+    const safe = String(expr).replace(/[^-()\d/*+.]/g, '').replace(/(\.\d*)\./g, '$1');
+    if (!safe || /[+\-*/.]{2,}/.test(safe.replace(/\d*\.\d*/g, ''))) throw new Error('表达式不完整');
+    const val = Function('"use strict";return (' + safe + ')')();
+    if (!isFinite(val)) throw new Error('无穷或溢出');
+    return val;
+  }
+
+  function factorial(n) {
+    if (n < 0) throw new Error('负数无阶乘');
+    if (n > 170) throw new Error('数值过大');
+    if (n % 1 !== 0) throw new Error('需为整数');
+    if (n === 0 || n === 1) return 1;
+    let r = 1;
+    for (let i = 2; i <= n; i++) r *= i;
+    return r;
+  }
+
+  function toRad(x) { return degMode ? x * Math.PI / 180 : x; }
+  function updateDegBtn() {
+    const btn = document.getElementById('degBtn');
+    if (btn) btn.textContent = degMode ? 'DEG' : 'RAD';
+  }
+
+  // ===== 输入处理 =====
+  function input(k) {
+    if (k >= '0' && k <= '9') {
+      if (overwrite || current === '0') { current = k; overwrite = false; }
+      else { if (current.replace(/,/g,'').length < 14) current += k; }
+      justCalculated = false;
+      playSound('pop');
+    } else if (k === '.') {
+      if (overwrite) { current = '0.'; overwrite = false; }
+      else if (!current.includes('.')) current += '.';
+      justCalculated = false;
+      playSound('pop');
+    } else if (k === 'back') {
+      if (overwrite) return;
+      current = current.length > 1 ? current.slice(0, -1) : '0';
+      justCalculated = false;
+      playSound('pop');
+    } else if (k === 'C') {
+      current = '0'; overwrite = true; exprEl.textContent = '';
+      storedValue = null; pendingOp = null; lastRhs = null; justCalculated = false;
+      playSound('clear');
+    } else if (k === 'C') {
+      setMood('idle');
+    } else if (k === '%') {
+      current = fmt(Number(current) / 100);
+      setMood('calc', 'popBig');
+      playSound('pop');
+      justCalculated = false;
+    } else if (k === '±') {
+      if (current === '0') return;
+      current = current.startsWith('-') ? current.slice(1) : '-' + current;
+      justCalculated = false;
+      playSound('pop');
+    } else if (k === 'rand') {
+      current = fmt(Math.random());
+      overwrite = true;
+      justCalculated = false;
+      setMood('dance', 'sparkle');
+      playSound('happy');
+    } else if (k === 'round') {
+      current = fmt(Math.round(Number(current)));
+      overwrite = true; justCalculated = true;
+      playSound('pop');
+    } else if (k === 'ceil') {
+      current = fmt(Math.ceil(Number(current)));
+      overwrite = true; justCalculated = true;
+      playSound('pop');
+    } else if (k === 'floor') {
+      current = fmt(Math.floor(Number(current)));
+      overwrite = true; justCalculated = true;
+      playSound('pop');
+    } else if (k === 'cbrt') {
+      const x = Number(current);
+      current = fmt(Math.cbrt(x));
+      exprEl.textContent = '∛(' + fmt(x) + ') =';
+      overwrite = true; justCalculated = true;
+      setMood('happy', 'sparkle');
+      playSound('happy');
+    } else if (k === 'sinh') {
+      const x = Number(current);
+      current = fmt(Math.sinh(x));
+      exprEl.textContent = 'sinh(' + fmt(x) + ') =';
+      overwrite = true; justCalculated = true;
+      playSound('happy');
+    } else if (k === 'cosh') {
+      const x = Number(current);
+      current = fmt(Math.cosh(x));
+      exprEl.textContent = 'cosh(' + fmt(x) + ') =';
+      overwrite = true; justCalculated = true;
+      playSound('happy');
+    } else if (k === 'tanh') {
+      const x = Number(current);
+      current = fmt(Math.tanh(x));
+      exprEl.textContent = 'tanh(' + fmt(x) + ') =';
+      overwrite = true; justCalculated = true;
+      playSound('happy');
+    } else if (k === 'mod') {
+      storedValue = Number(current);
+      pendingOp = '%';
+      exprEl.textContent = current + ' mod ';
+      overwrite = true;
+      justCalculated = false;
+      playSound('op');
+    } else if (k === 'nPr') {
+      storedValue = Number(current);
+      pendingOp = 'nPr';
+      exprEl.textContent = current + ' P ';
+      overwrite = true;
+      justCalculated = false;
+      playSound('op');
+    } else if (k === 'nCr') {
+      storedValue = Number(current);
+      pendingOp = 'nCr';
+      exprEl.textContent = current + ' C ';
+      overwrite = true;
+      justCalculated = false;
+      playSound('op');
+    } else if (k === 'M+') {
+      memory = Number(current);
+      showToast('已存入记忆: ' + fmt(memory));
+      playSound('pop');
+    } else if (k === 'MR') {
+      current = fmt(memory);
+      overwrite = true;
+      justCalculated = false;
+      playSound('pop');
+    } else if (k === 'MC') {
+      memory = 0;
+      showToast('记忆已清除');
+      playSound('clear');
+    } else if (k === 'deg') {
+      degMode = !degMode;
+      updateDegBtn();
+      showToast(degMode ? '角度模式 (DEG)' : '弧度模式 (RAD)');
+      playSound('pop');
+    } else if (k === 'pow') {
+      storedValue = Number(current);
+      pendingOp = '**';
+      exprEl.textContent = current + ' ^ ';
+      overwrite = true;
+      justCalculated = false;
+      playSound('op');
+    } else if (['sin','cos','tan','asin','acos','atan','sqrt','sq','cube','inv','log','ln','fact','abs','exp','tenPow','twoPow'].includes(k)) {
+      const x = Number(current);
+      let val, exprText;
+      try {
+        switch (k) {
+          case 'sin': val = Math.sin(toRad(x)); exprText = `sin(${fmt(x)})`; break;
+          case 'cos': val = Math.cos(toRad(x)); exprText = `cos(${fmt(x)})`; break;
+          case 'tan': val = Math.tan(toRad(x)); exprText = `tan(${fmt(x)})`; break;
+          case 'asin': if (x < -1 || x > 1) throw new Error('范围[-1,1]'); val = Math.asin(x) * (degMode ? 180/Math.PI : 1); exprText = `sin⁻¹(${fmt(x)})`; break;
+          case 'acos': if (x < -1 || x > 1) throw new Error('范围[-1,1]'); val = Math.acos(x) * (degMode ? 180/Math.PI : 1); exprText = `cos⁻¹(${fmt(x)})`; break;
+          case 'atan': val = Math.atan(x) * (degMode ? 180/Math.PI : 1); exprText = `tan⁻¹(${fmt(x)})`; break;
+          case 'sqrt': if (x < 0) throw new Error('负数不能开方'); val = Math.sqrt(x); exprText = `√(${fmt(x)})`; break;
+          case 'sq': val = x * x; exprText = `sqr(${fmt(x)})`; break;
+          case 'cube': val = x * x * x; exprText = `cube(${fmt(x)})`; break;
+          case 'inv': if (x === 0) throw new Error('不能除以0'); val = 1 / x; exprText = `1/(${fmt(x)})`; break;
+          case 'log': if (x <= 0) throw new Error('需为正数'); val = Math.log10(x); exprText = `log(${fmt(x)})`; break;
+          case 'ln': if (x <= 0) throw new Error('需为正数'); val = Math.log(x); exprText = `ln(${fmt(x)})`; break;
+          case 'fact': val = factorial(x); exprText = `${fmt(x)}!`; break;
+          case 'abs': val = Math.abs(x); exprText = `|${fmt(x)}|`; break;
+          case 'exp': val = Math.exp(x); exprText = `e^(${fmt(x)})`; break;
+          case 'tenPow': val = Math.pow(10, x); exprText = `10^(${fmt(x)})`; break;
+          case 'twoPow': val = Math.pow(2, x); exprText = `2^(${fmt(x)})`; break;
+        }
+        current = fmt(val);
+        exprEl.textContent = exprText + ' =';
+        addHistory(exprText + ' =', current);
+        overwrite = true;
+        justCalculated = true;
+        setMood('happy', 'sparkle');
+        playSound('happy');
+      } catch(err) {
+        current = err.message || '表达式错误';
+        overwrite = true;
+        justCalculated = false;
+        setMood('error', 'shake');
+      }
+    } else if (k === 'pi') {
+      current = fmt(Math.PI);
+      overwrite = true;
+      justCalculated = false;
+      setMood('pi', 'spin');
+      playSound('pop');
+    } else if (k === 'e') {
+      current = fmt(Math.E);
+      overwrite = true;
+      justCalculated = false;
+      playSound('pop');
+    } else if ('+-*/'.includes(k)) {
+      const num = Number(current);
+      const sym = { '+':'+','-':'−','*':'×','/':'÷' }[k];
+      if (justCalculated) {
+        pendingOp = k;
+        storedValue = Number(current);
+        exprEl.textContent = fmt(storedValue) + ' ' + sym + ' ';
+        justCalculated = false;
+      } else if (pendingOp !== null && overwrite) {
+        pendingOp = k;
+        exprEl.textContent = fmt(storedValue) + ' ' + sym + ' ';
+      } else if (pendingOp !== null && storedValue !== null) {
+        try {
+          const next = safeEval(storedValue + ' ' + pendingOp + ' ' + num);
+          current = fmt(next);
+          storedValue = next;
+          pendingOp = k;
+          exprEl.textContent = fmt(next) + ' ' + sym + ' ';
+        } catch(err) {
+          current = '表达式错误';
+          storedValue = null; pendingOp = null; lastRhs = null;
+          setMood('error');
+        }
+      } else {
+        storedValue = num;
+        pendingOp = k;
+        exprEl.textContent = current + ' ' + sym + ' ';
+      }
+      overwrite = true;
+      playSound('op');
+    } else if (k === '=') {
+      if (pendingOp === null || storedValue === null) return;
+      const num = justCalculated ? lastRhs : Number(current);
+      const sym = { '+':'+','-':'−','*':'×','/':'÷','**':'^' }[pendingOp];
+      try {
+        setMood('calc');
+        playSound('equal');
+        let val;
+        if (pendingOp === '**') val = Math.pow(storedValue, num);
+        else if (pendingOp === '%') {
+          if (num === 0) throw new Error('除数不能为0');
+          val = storedValue % num;
+        }
+        else if (pendingOp === 'nPr') {
+          if (storedValue < 0 || num < 0 || num > storedValue || storedValue % 1 !== 0 || num % 1 !== 0) throw new Error('需满足 n≥r≥0 且为整数');
+          val = factorial(storedValue) / factorial(storedValue - num);
+        }
+        else if (pendingOp === 'nCr') {
+          if (storedValue < 0 || num < 0 || num > storedValue || storedValue % 1 !== 0 || num % 1 !== 0) throw new Error('需满足 n≥r≥0 且为整数');
+          val = factorial(storedValue) / (factorial(num) * factorial(storedValue - num));
+        }
+        else val = safeEval(storedValue + ' ' + pendingOp + ' ' + num);
+        const exprText = sym === '^' ? fmt(storedValue) + ' ^ ' + fmt(num) : fmt(storedValue) + ' ' + sym + ' ' + fmt(num);
+        exprEl.textContent = exprText + ' =';
+        current = fmt(val);
+        addHistory(exprText + ' =', current);
+        if (!justCalculated) lastRhs = num;
+        if (pendingOp === '**') { storedValue = val; pendingOp = null; lastRhs = null; }
+        else { storedValue = val; lastRhs = justCalculated ? lastRhs : num; }
+        overwrite = true;
+        justCalculated = true;
+        // 彩蛋
+        const n = Number(current);
+        if (current === '42') {
+          setMood('love', 'sparkle');
+          showToast('生命、宇宙及一切的终极答案是 42！');
+          confettiBurst();
+        } else if (current === '0') {
+          setMood('zero', 'shake');
+        } else if (current === '520') {
+          setMood('love', 'heart');
+          showToast('520～ 我也爱你！');
+        } else if (current === '1314') {
+          setMood('love', 'heart');
+          showToast('一生一世 1314 ♡');
+        } else if (Math.abs(n) > 1e12) {
+          setMood('big', 'popBig');
+          confetti();
+        } else if (n < 0) {
+          confetti();
+          setMood('happy');
+        } else {
+          confetti();
+          setMood('happy');
+        }
+      } catch(err) {
+        current = err.message === '无穷或溢出' ? '不能除以0' : '表达式错误';
+        storedValue = null; pendingOp = null; lastRhs = null;
+        overwrite = true;
+        justCalculated = false;
+        setMood('zero', 'shake');
+        playSound('error');
+      }
+    }
+    resultEl.textContent = current;
+    resultEl.classList.remove('pop');
+    void resultEl.offsetWidth;
+    resultEl.classList.add('pop');
+  }
+
+  // ===== 彩带 =====
+  function confetti() {
+    const colors = ['#ff8a80','#ff80ab','#ea80fc','#b388ff','#8c9eff','#80d8ff','#a7ffeb','#b9f6ca','#ffe57f','#ffd180'];
+    for (let i = 0; i < 30; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = colors[Math.floor(Math.random()*colors.length)];
+      c.style.borderRadius = Math.random() > .5 ? '50%' : '2px';
+      c.style.animationDuration = (2 + Math.random()*2) + 's';
+      c.style.animationDelay = (Math.random()*0.4) + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4500);
+    }
+  }
+
+  function confettiBurst() {
+    const colors = ['#ff5252','#ff4081','#e040fb','#7c4dff','#536dfe','#448aff','#18ffff','#64ffda','#69f0ae','#b2ff59','#ffff00','#ffab40'];
+    for (let i = 0; i < 80; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = colors[Math.floor(Math.random()*colors.length)];
+      c.style.width = (6 + Math.random()*10) + 'px';
+      c.style.height = (8 + Math.random()*12) + 'px';
+      c.style.borderRadius = Math.random() > .5 ? '50%' : '2px';
+      c.style.animationDuration = (1.5 + Math.random()*2.5) + 's';
+      c.style.animationDelay = (Math.random()*0.3) + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 5000);
+    }
+  }
+
+  // ===== 辅助功能 =====
+  let toastTimer = null;
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+  }
+
+  // ===== 历史记录 =====
+  function addHistory(expr, result) {
+    history.unshift({ expr, result, time: new Date().toLocaleTimeString() });
+    if (history.length > 100) history.pop();
+    renderHistory();
+    saveData();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    const title = document.getElementById('historyTitle');
+    if (title) title.textContent = `📋 计算历史 (${history.length})`;
+    if (history.length === 0) {
+      list.innerHTML = '<div style="text-align:center;color:#c98fb0;padding:30px 0;font-size:15px;">还没有计算记录哦～<br><span style="font-size:28px;display:block;margin-top:10px;">📝</span></div>';
+      return;
+    }
+    list.innerHTML = history.map((h, i) =>
+      `<div class="history-item" data-i="${i}">
+         <div class="he">${h.expr} <span style="float:right;font-size:11px;color:#d7b0c9">${h.time}</span></div>
+         <div class="hr">${h.result}</div>
+       </div>`
+    ).join('');
+    list.querySelectorAll('.history-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const h = history[Number(item.dataset.i)];
+        current = h.result;
+        overwrite = true;
+        justCalculated = true;
+        exprEl.textContent = '';
+        resultEl.textContent = current;
+        resultEl.classList.remove('pop');
+        void resultEl.offsetWidth;
+        resultEl.classList.add('pop');
+        showToast('已加载: ' + h.result);
+        setMood('love', 'heart');
+        playSound('pop');
+        closeHistory();
+      });
+    });
+  }
+
+  // ===== 单位换算 =====
+  const units = {
+    length: {
+      name: '长度',
+      units: { 'mm':1, 'cm':10, 'm':1000, 'km':1000000, 'inch':25.4, 'ft':304.8, 'yd':914.4, 'mi':1609344 },
+      labels: { 'mm':'毫米','cm':'厘米','m':'米','km':'千米','inch':'英寸','ft':'英尺','yd':'码','mi':'英里' }
+    },
+    weight: {
+      name: '重量',
+      units: { 'mg':1, 'g':1000, 'kg':1000000, 't':1000000000, 'oz':28349.5, 'lb':453592 },
+      labels: { 'mg':'毫克','g':'克','kg':'千克','t':'吨','oz':'盎司','lb':'磅' }
+    },
+    temp: {
+      name: '温度',
+      special: true
+    },
+    area: {
+      name: '面积',
+      units: { 'mm²':1, 'cm²':100, 'm²':1000000, 'km²':1e12, 'ft²':92903, 'acre':40468564, 'ha':1e10 },
+      labels: { 'mm²':'平方毫米','cm²':'平方厘米','m²':'平方米','km²':'平方千米','ft²':'平方英尺','acre':'英亩','ha':'公顷' }
+    },
+    speed: {
+      name: '速度',
+      units: { 'm/s':1, 'km/h':0.277778, 'mph':0.44704, 'knot':0.514444, 'ft/s':0.3048 },
+      labels: { 'm/s':'米/秒','km/h':'千米/时','mph':'英里/时','knot':'节','ft/s':'英尺/秒' }
+    }
+  };
+  let currentUnitCat = 'length';
+
+  function renderUnitPanel() {
+    const cat = units[currentUnitCat];
+    const body = document.getElementById('unitBody');
+    if (cat.special && currentUnitCat === 'temp') {
+      body.innerHTML = `
+        <div class="unit-row">
+          <label>℃ 摄氏</label>
+          <input type="number" id="u_c" placeholder="摄氏度" value="0">
+        </div>
+        <div class="unit-row">
+          <label>℉ 华氏</label>
+          <input type="number" id="u_f" placeholder="华氏度">
+        </div>
+        <div class="unit-row">
+          <label>K 开尔文</label>
+          <input type="number" id="u_k" placeholder="开尔文">
+        </div>
+      `;
+      const cInput = document.getElementById('u_c');
+      const fInput = document.getElementById('u_f');
+      const kInput = document.getElementById('u_k');
+      cInput.addEventListener('input', () => {
+        const c = parseFloat(cInput.value);
+        if (isNaN(c)) { fInput.value=''; kInput.value=''; return; }
+        fInput.value = fmt(c * 9/5 + 32);
+        kInput.value = fmt(c + 273.15);
+      });
+      fInput.addEventListener('input', () => {
+        const f = parseFloat(fInput.value);
+        if (isNaN(f)) { cInput.value=''; kInput.value=''; return; }
+        cInput.value = fmt((f - 32) * 5/9);
+        kInput.value = fmt((f - 32) * 5/9 + 273.15);
+      });
+      kInput.addEventListener('input', () => {
+        const k = parseFloat(kInput.value);
+        if (isNaN(k)) { cInput.value=''; fInput.value=''; return; }
+        cInput.value = fmt(k - 273.15);
+        fInput.value = fmt((k - 273.15) * 9/5 + 32);
+      });
+    } else {
+      const unitKeys = Object.keys(cat.units);
+      let html = '';
+      unitKeys.forEach(k => {
+        html += `<div class="unit-row">
+          <label>${cat.labels[k]}</label>
+          <input type="number" data-unit="${k}" data-cat="${currentUnitCat}" placeholder="${cat.labels[k]}" value="">
+        </div>`;
+      });
+      body.innerHTML = html;
+      body.querySelectorAll('input[data-unit]').forEach(input => {
+        input.addEventListener('input', () => {
+          const val = parseFloat(input.value);
+          const srcUnit = input.dataset.unit;
+          if (isNaN(val)) {
+            body.querySelectorAll('input[data-unit]').forEach(other => { if (other !== input) other.value = ''; });
+            return;
+          }
+          const srcBase = val * cat.units[srcUnit];
+          body.querySelectorAll('input[data-unit]').forEach(other => {
+            if (other !== input) {
+              const targetUnit = other.dataset.unit;
+              other.value = fmt(srcBase / cat.units[targetUnit]);
+            }
+          });
+        });
+      });
+    }
+  }
+
+  // ===== 日期计算 =====
+  function calcDateDiff(d1, d2) {
+    const ms = Math.abs(d2 - d1);
+    const days = Math.floor(ms / 86400000);
+    const weeks = Math.floor(days / 7);
+    const years = Math.floor(days / 365.25);
+    let result = `相差 <b>${days}</b> 天`;
+    if (weeks > 0) result += `（约 ${weeks} 周）`;
+    if (years > 0) result += `（约 ${fmt(years)} 年）`;
+    return result;
+  }
+
+  function bindDateCalc() {
+    const startEl = document.getElementById('dateStart');
+    const endEl = document.getElementById('dateEnd');
+    const offsetEl = document.getElementById('dateOffset');
+    const resultDiv = document.getElementById('dateResult');
+    const calcBtn = document.getElementById('calcDate');
+
+    // 默认填入今天
+    const today = new Date().toISOString().split('T')[0];
+    if (!startEl.value) startEl.value = today;
+    if (!endEl.value) {
+      const tmr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+      endEl.value = tmr;
+    }
+
+    calcBtn.addEventListener('click', () => {
+      const d1 = new Date(startEl.value);
+      const d2 = new Date(endEl.value);
+      const offset = parseInt(offsetEl.value);
+
+      if (startEl.value && endEl.value && !isNaN(d1) && !isNaN(d2)) {
+        let html = `<div>${d1.toLocaleDateString('zh-CN')} → ${d2.toLocaleDateString('zh-CN')}</div>`;
+        html += `<div style="margin-top:6px;font-size:18px;">${calcDateDiff(d1, d2)}</div>`;
+        if (!isNaN(offset)) {
+          const newDate = new Date(d1.getTime() + offset * 86400000);
+          html += `<div style="margin-top:6px;font-size:14px;color:#c98fb0;">${startEl.value} ${offset>=0?'+':'-'} ${Math.abs(offset)}天 = ${newDate.toLocaleDateString('zh-CN')}</div>`;
+        }
+        resultDiv.innerHTML = html;
+        setMood('happy', 'sparkle');
+        playSound('happy');
+      } else {
+        resultDiv.textContent = '请选择有效的日期哦～';
+        setMood('wave');
+        playSound('error');
+      }
+    });
+  }
+
+  // ===== 面板管理 =====
+  function closeAllPanels() {
+    const calc = document.getElementById('calc');
+    calc.classList.remove('show-history', 'show-unit', 'show-date', 'show-prog', 'show-stats', 'show-eq', 'show-geo', 'show-fin', 'show-graph', 'show-sound');
+  }
+
+  function openUnitPanel() {
+    closeAllPanels();
+    document.getElementById('calc').classList.add('show-unit');
+    renderUnitPanel();
+    setMood('wave');
+    playSound('whoosh');
+  }
+  function closeUnitPanel() {
+    document.getElementById('calc').classList.remove('show-unit');
+    setMood('idle');
+  }
+
+  function openDatePanel() {
+    closeAllPanels();
+    document.getElementById('calc').classList.add('show-date');
+    setMood('wave');
+    playSound('whoosh');
+  }
+  function closeDatePanel() {
+    document.getElementById('calc').classList.remove('show-date');
+    setMood('idle');
+  }
+
+  function openHistory() {
+    closeAllPanels();
+    document.getElementById('calc').classList.add('show-history');
+    renderHistory();
+    setMood('wave');
+    playSound('whoosh');
+  }
+  function closeHistory() {
+    document.getElementById('calc').classList.remove('show-history');
+    setMood('idle');
+  }
+
+  // ===== 本地存储 =====
+  function saveData() {
+    try {
+      localStorage.setItem('calc_history', JSON.stringify(history));
+      localStorage.setItem('calc_memory', String(memory));
+      localStorage.setItem('calc_theme', document.body.classList.contains('theme-dark') ? 'dark' : 'light');
+      localStorage.setItem('calc_bg_index', String(bgIndex));
+      localStorage.setItem('calc_sound', soundEnabled ? 'on' : 'off');
+      localStorage.setItem('calc_vol_master', String(volMaster));
+      localStorage.setItem('calc_vol_key', String(volKey));
+      localStorage.setItem('calc_vol_voice', String(volVoice));
+      localStorage.setItem('calc_key_sound', keySound);
+      localStorage.setItem('calc_voice_on', voiceEnabled ? '1' : '0');
+    } catch(e) {}
+  }
+  function loadData() {
+    try {
+      const h = localStorage.getItem('calc_history');
+      if (h) history = JSON.parse(h);
+      const m = localStorage.getItem('calc_memory');
+      if (m) memory = Number(m);
+      const t = localStorage.getItem('calc_theme');
+      if (t === 'dark') {
+        document.body.classList.add('theme-dark');
+        const tb = document.getElementById('toggleTheme');
+        if (tb) tb.textContent = '☀️ 亮色';
+      }
+      const bi = localStorage.getItem('calc_bg_index');
+      if (bi !== null) {
+        bgIndex = Number(bi) % bgLight.length;
+        const dark = document.body.classList.contains('theme-dark');
+        const list = dark ? bgDark : bgLight;
+        const idx = bgIndex % list.length;
+        document.body.style.backgroundImage = `url('${list[idx]}')`;
+      }
+      const s = localStorage.getItem('calc_sound');
+      if (s === 'off') {
+        soundEnabled = false;
+        const sb = document.getElementById('toggleSound');
+        if (sb) { sb.textContent = '🔕 静音'; sb.className = 'sound-off'; }
+      }
+      const vm = Number(localStorage.getItem('calc_vol_master'));
+      if (vm) { volMaster = vm; const e = document.getElementById('volMaster'); if (e) { e.value = Math.round(vm*100); document.getElementById('volMasterVal').textContent = Math.round(vm*100)+'%'; } }
+      const vk = Number(localStorage.getItem('calc_vol_key'));
+      if (vk) { volKey = vk; const e = document.getElementById('volKey'); if (e) { e.value = Math.round(vk*100); document.getElementById('volKeyVal').textContent = Math.round(vk*100)+'%'; } }
+      const vv = Number(localStorage.getItem('calc_vol_voice'));
+      if (vv) { volVoice = vv; const e = document.getElementById('volVoice'); if (e) { e.value = Math.round(vv*100); document.getElementById('volVoiceVal').textContent = Math.round(vv*100)+'%'; } }
+      const ks = localStorage.getItem('calc_key_sound');
+      if (ks && KEY_SOUNDS[ks]) keySound = ks;
+      if (localStorage.getItem('calc_voice_on') === '0') voiceEnabled = false;
+      updateDegBtn();
+      renderHistory();
+    } catch(e) {}
+  }
+
+  // ===== 按钮事件 =====
+  document.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const k = b.dataset.k;
+      mascotEl.classList.remove('popBig');
+      void mascotEl.offsetWidth;
+      if (['+','-','*','/','=','pow'].includes(k)) setMood('calc', 'popBig');
+      input(k);
+    });
+  });
+
+  // ===== 键盘支持 =====
+  document.addEventListener('keydown', e => {
+    // 如果焦点在输入框内，不拦截
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    if (e.key === 'Escape') {
+      const calc = document.getElementById('calc').classList;
+      if (calc.contains('show-history')) { closeHistory(); e.preventDefault(); return; }
+      if (calc.contains('show-unit')) { closeUnitPanel(); e.preventDefault(); return; }
+      if (calc.contains('show-date')) { closeDatePanel(); e.preventDefault(); return; }
+      if (calc.contains('show-prog')) { closeProgPanel(); e.preventDefault(); return; }
+      if (calc.contains('show-stats')) { closeStatsPanel(); e.preventDefault(); return; }
+      if (calc.contains('show-eq')) { closeEqPanel(); e.preventDefault(); return; }
+      if (calc.contains('show-geo')) { closeGeoPanel(); e.preventDefault(); return; }
+      if (calc.contains('show-fin')) { closeFinPanel(); e.preventDefault(); return; }
+      if (calc.contains('show-graph')) { closeGraphPanel(); e.preventDefault(); return; }
+      if (calc.contains('show-sound')) { closeSoundPanel(); e.preventDefault(); return; }
+    }
+    const map = { Enter:'=', '=':'=', Backspace:'back', Delete:'C' };
+    let k = e.key;
+    if (map[k]) k = map[k];
+    if ('0123456789+-*/.'.includes(k)) { e.preventDefault(); input(k); }
+    else if (k === 'Enter') { e.preventDefault(); input('='); }
+    else if (k === 'h' || k === 'H') { e.preventDefault(); toggleHistoryPanel(); }
+    else if (k === 's' || k === 'S') { e.preventDefault(); document.getElementById('toggleSci').click(); }
+    else if (k === 't' || k === 'T') { e.preventDefault(); document.getElementById('toggleTheme').click(); }
+    else if (k === 'b' || k === 'B') { e.preventDefault(); document.getElementById('toggleBg').click(); }
+    else if (k === 'u' || k === 'U') { e.preventDefault(); document.getElementById('toggleUnit').click(); }
+    else if (k === 'd' || k === 'D') { e.preventDefault(); document.getElementById('toggleDate').click(); }
+  });
+
+  // ===== 功能按钮事件 =====
+
+  // 科学模式切换
+  document.getElementById('toggleSci').addEventListener('click', function() {
+    const calc = document.getElementById('calc');
+    calc.classList.toggle('scientific');
+    this.classList.toggle('active');
+    this.textContent = calc.classList.contains('scientific') ? '🧮 基本' : '🔬 科学';
+    setMood('wave');
+    playSound('pop');
+  });
+
+  // 主题切换
+  document.getElementById('toggleTheme').addEventListener('click', function() {
+    document.body.classList.toggle('theme-dark');
+    const dark = document.body.classList.contains('theme-dark');
+    this.textContent = dark ? '☀️ 亮色' : '🌙 暗色';
+    saveData();
+    setMood(dark ? 'night' : 'love', 'sparkle');
+    playSound('pop');
+  });
+
+  // 背景切换
+  const bgLight = [
+    'http://yb.woa.com/64KmBvPrTOt',
+    'http://yb.woa.com/3Glec7wwVJU',
+    'http://yb.woa.com/FU8NDXvvIvu',
+    'http://yb.woa.com/L1Ynh4kf1mE',
+    'http://yb.woa.com/CZNtyLqFFY'
+  ];
+  const bgDark = [
+    'http://yb.woa.com/FU8NDXvvIvu',
+    'http://yb.woa.com/A9KDX9f9y9W',
+    'http://yb.woa.com/Lhj0Rq93Emk'
+  ];
+  let bgIndex = 0;
+  document.getElementById('toggleBg').addEventListener('click', function() {
+    bgIndex = (bgIndex + 1) % bgLight.length;
+    const dark = document.body.classList.contains('theme-dark');
+    const list = dark ? bgDark : bgLight;
+    const idx = bgIndex % list.length;
+    document.body.style.backgroundImage = `url('${list[idx]}')`;
+    showToast('已切换背景 ' + (idx + 1) + '/' + list.length + ' 🖼️');
+    setMood('spin');
+    playSound('whoosh');
+    saveData();
+  });
+
+  // 音效切换
+  document.getElementById('toggleSound').addEventListener('click', function() {
+    soundEnabled = !soundEnabled;
+    this.textContent = soundEnabled ? '🔔 音效' : '🔕 静音';
+    this.className = soundEnabled ? 'sound-on' : 'sound-off';
+    if (soundEnabled) playSound('happy');
+    showToast(soundEnabled ? '音效已开启 🔔' : '音效已关闭 🔕');
+    saveData();
+  });
+
+  // ===== 音效面板 =====
+  function openSoundPanel() {
+    closeAllPanels('sound');
+    const p = document.getElementById('soundPanel');
+    p.classList.add('show');
+    document.getElementById('calc').classList.add('show-sound');
+    renderSoundPanel();
+    playSound('pop');
+  }
+  function closeSoundPanel() {
+    document.getElementById('soundPanel').classList.remove('show');
+    document.getElementById('calc').classList.remove('show-sound');
+  }
+  function renderSoundPanel() {
+    // 按键音效预设
+    const kg = document.getElementById('keySoundGrid');
+    kg.innerHTML = '';
+    Object.keys(KEY_SOUNDS).forEach(k => {
+      const cfg = KEY_SOUNDS[k];
+      const card = document.createElement('div');
+      card.className = 'preset-card' + (keySound === k ? ' active' : '');
+      card.innerHTML = `<span class="p-emoji">${cfg.emoji}</span><span class="p-name">${cfg.name}</span><button class="p-play">${cfg.base ? '试听' : '—'}</button>`;
+      card.addEventListener('click', (e) => {
+        if (e.target.classList.contains('p-play')) return;
+        keySound = k;
+        saveData();
+        renderSoundPanel();
+        playKeySound(cfg.base || 'click');
+      });
+      const btn = card.querySelector('.p-play');
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (cfg.base) playKeySound(cfg.base);
+      });
+      kg.appendChild(card);
+    });
+    // 萝莉语音
+    const vg = document.getElementById('voiceGrid');
+    vg.innerHTML = '';
+    Object.keys(VOICE_LINES).forEach(k => {
+      const cfg = VOICE_LINES[k];
+      const card = document.createElement('div');
+      card.className = 'preset-card';
+      card.innerHTML = `<span class="p-emoji">${cfg.emoji}</span><span class="p-name">${cfg.name}</span><button class="p-play">试听</button>`;
+      card.addEventListener('click', () => speak(k));
+      card.querySelector('.p-play').addEventListener('click', (e) => {
+        e.stopPropagation();
+        speak(k);
+      });
+      vg.appendChild(card);
+    });
+    bindSoundSliders();
+  }
+  let slidersBound = false;
+  function bindSoundSliders() {
+    if (slidersBound) return;
+    slidersBound = true;
+    const map = { volMaster: 'volMaster', volKey: 'volKey', volVoice: 'volVoice' };
+    Object.keys(map).forEach(id => {
+      const el = document.getElementById(id);
+      const valEl = document.getElementById(id + 'Val');
+      el.addEventListener('input', () => {
+        const v = Number(el.value);
+        if (id === 'volMaster') volMaster = v / 100;
+        else if (id === 'volKey') volKey = v / 100;
+        else volVoice = v / 100;
+        valEl.textContent = v + '%';
+        saveData();
+      });
+    });
+  }
+  document.getElementById('toggleVoice').addEventListener('click', openSoundPanel);
+  document.getElementById('closeSound').addEventListener('click', (e) => { e.stopPropagation(); closeSoundPanel(); });
+  document.getElementById('soundPanel').addEventListener('click', function(e) { if (e.target === this) closeSoundPanel(); });
+  // ESC 关闭
+  const _origKey = null;
+
+    // 单位换算面板
+  document.getElementById('toggleUnit').addEventListener('click', openUnitPanel);
+  document.getElementById('closeUnit').addEventListener('click', (e) => { e.stopPropagation(); closeUnitPanel(); });
+
+  // 单位 tab 切换
+  document.getElementById('unitTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    document.querySelectorAll('#unitTabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentUnitCat = btn.dataset.cat;
+    renderUnitPanel();
+    playSound('pop');
+  });
+
+  // 日期计算面板
+  document.getElementById('toggleDate').addEventListener('click', openDatePanel);
+  document.getElementById('closeDate').addEventListener('click', (e) => { e.stopPropagation(); closeDatePanel(); });
+
+  // 历史面板切换
+  function toggleHistoryPanel() {
+    const calc = document.getElementById('calc');
+    if (calc.classList.contains('show-history')) closeHistory();
+    else openHistory();
+  }
+  document.getElementById('toggleHistory').addEventListener('click', toggleHistoryPanel);
+
+  // 关闭历史按钮
+  document.getElementById('closeHistory').addEventListener('click', function(e) {
+    e.stopPropagation();
+    closeHistory();
+    setMood('idle');
+  });
+
+  // 清空历史
+  document.getElementById('clearHistory').addEventListener('click', function(e) {
+    e.stopPropagation();
+    history = [];
+    renderHistory();
+    saveData();
+    showToast('历史已清空 🗑️');
+    setMood('idle');
+    playSound('clear');
+  });
+
+  // 面板外点击关闭
+  document.getElementById('historyPanel').addEventListener('click', function(e) {
+    if (e.target === this) closeHistory();
+  });
+  document.getElementById('unitPanel').addEventListener('click', function(e) {
+    if (e.target === this) closeUnitPanel();
+  });
+  document.getElementById('datePanel').addEventListener('click', function(e) {
+    if (e.target === this) closeDatePanel();
+  });
+  document.getElementById('progPanel').addEventListener('click', function(e) {
+    if (e.target === this) closeProgPanel();
+  });
+  document.getElementById('statsPanel').addEventListener('click', function(e) {
+    if (e.target === this) closeStatsPanel();
+  });
+  document.getElementById('eqPanel').addEventListener('click', function(e) {
+    if (e.target === this) closeEqPanel();
+  });
+  document.getElementById('geoPanel').addEventListener('click', function(e) {
+    if (e.target === this) closeGeoPanel();
+  });
+  document.getElementById('finPanel').addEventListener('click', function(e) {
+    if (e.target === this) closeFinPanel();
+  });
+
+  // 新功能面板按钮
+  document.getElementById('toggleProgrammer').addEventListener('click', openProgPanel);
+  document.getElementById('closeProg').addEventListener('click', (e) => { e.stopPropagation(); closeProgPanel(); });
+  document.getElementById('toggleStats').addEventListener('click', openStatsPanel);
+  document.getElementById('closeStats').addEventListener('click', (e) => { e.stopPropagation(); closeStatsPanel(); });
+  document.getElementById('toggleEquation').addEventListener('click', openEqPanel);
+  document.getElementById('closeEq').addEventListener('click', (e) => { e.stopPropagation(); closeEqPanel(); });
+  document.getElementById('toggleGeometry').addEventListener('click', openGeoPanel);
+  document.getElementById('closeGeo').addEventListener('click', (e) => { e.stopPropagation(); closeGeoPanel(); });
+  document.getElementById('toggleFinance').addEventListener('click', openFinPanel);
+  document.getElementById('closeFin').addEventListener('click', (e) => { e.stopPropagation(); closeFinPanel(); });
+
+  // 绘图面板按钮
+  document.getElementById('toggleGraph').addEventListener('click', openGraphPanel);
+  document.getElementById('closeGraph').addEventListener('click', (e) => { e.stopPropagation(); closeGraphPanel(); });
+  document.getElementById('graphPanel').addEventListener('click', function(e) {
+    if (e.target === this) closeGraphPanel();
+  });
+
+  // ===== 长按复制 =====
+  let pressTimer = null;
+  function clearPressTimer() { clearTimeout(pressTimer); }
+  resultEl.addEventListener('mousedown', function() {
+    pressTimer = setTimeout(() => { copyResult(); }, 600);
+  });
+  resultEl.addEventListener('mouseup', clearPressTimer);
+  resultEl.addEventListener('mouseleave', clearPressTimer);
+  resultEl.addEventListener('touchstart', function(e) {
+    // 不阻止默认行为，允许正常触摸
+    pressTimer = setTimeout(() => { copyResult(); }, 600);
+  }, { passive: true });
+  resultEl.addEventListener('touchend', clearPressTimer);
+  resultEl.addEventListener('touchmove', clearPressTimer, { passive: true });
+
+  function copyResult() {
+    if (current && current !== '0' && !current.includes('错误') && !current.includes('除以0')) {
+      try {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(current).then(() => showToast('已复制: ' + current));
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = current;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          showToast('已复制: ' + current);
+        }
+        setMood('love', 'heart');
+        playSound('pop');
+      } catch(e) {}
+    }
+  }
+
+  // ===== 进制与位运算面板 =====
+  let progWord = 32, progSigned = true;
+  function maskBig(v) {
+    // 按字长+有符号补码截断
+    const bits = progWord;
+    const max = BigInt(1) << BigInt(bits);
+    let b = BigInt(v) % max;
+    if (b < 0n) b += max;
+    if (progSigned && b >= (BigInt(1) << BigInt(bits - 1))) {
+      b -= max;
+    }
+    return b;
+  }
+  function fmtBase(n, base) {
+    try {
+      let b = BigInt(n);
+      const max = BigInt(1) << BigInt(progWord);
+      if (progSigned) {
+        const half = BigInt(1) << BigInt(progWord - 1);
+        if (b >= half) b -= max;
+      }
+      let u = b < 0n ? b + max : b;
+      return u.toString(base).toUpperCase();
+    } catch(e) { return '0'; }
+  }
+  function syncProgFromDec() {
+    const decEl = document.getElementById('progDec');
+    const v = decEl.value.trim();
+    if (v === '') { ['progHex','progOct','progBin'].forEach(id => document.getElementById(id).value = ''); return; }
+    let n;
+    try { n = BigInt(v); } catch(e) { return; }
+    document.getElementById('progHex').value = fmtBase(n, 16);
+    document.getElementById('progOct').value = fmtBase(n, 8);
+    document.getElementById('progBin').value = fmtBase(n, 2);
+  }
+  function syncProgFrom(otherBase) {
+    const el = document.getElementById('prog' + otherBase);
+    const v = el.value.trim();
+    if (v === '') { document.getElementById('progDec').value = ''; syncProgFromDec(); return; }
+    try {
+      const n = BigInt(otherBase === 'Hex' ? '0x' + v : otherBase === 'Oct' ? '0o' + v : '0b' + v);
+      document.getElementById('progDec').value = fmtBase(n, 10);
+      syncProgFromDec();
+    } catch(e) {}
+  }
+  function bindProgPanel() {
+    const ids = ['progDec','progHex','progOct','progBin'];
+    ids.forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        const key = id.replace('prog', '');
+        if (key === 'Dec') syncProgFromDec();
+        else syncProgFrom(key);
+      });
+    });
+    document.getElementById('progWord').addEventListener('change', e => { progWord = Number(e.target.value); syncProgFromDec(); });
+    document.getElementById('progSigned').addEventListener('change', e => { progSigned = e.target.checked; syncProgFromDec(); });
+
+    // 位运算
+    document.querySelectorAll('[data-bit]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        playSound('op');
+        const op = btn.dataset.bit;
+        let a, b;
+        try { a = BigInt(document.getElementById('progA').value); } catch(e) { a = 0n; }
+        try { b = BigInt(document.getElementById('progB').value); } catch(e) { b = 0n; }
+        const n = Number(document.getElementById('progn').value) || 0;
+        const max = BigInt(1) << BigInt(progWord);
+        let r;
+        const mask = (x) => { let v = x % max; if (v < 0n) v += max; return v; };
+        switch (op) {
+          case 'and': r = mask(a & b); break;
+          case 'or':  r = mask(a | b); break;
+          case 'xor': r = mask(a ^ b); break;
+          case 'not': r = mask(~a); break;
+          case 'shl': r = mask(a << BigInt(n)); break;
+          case 'shr': r = a >= 0n ? mask(a >> BigInt(n)) : mask((a + max) >> BigInt(n)); break;
+        }
+        let signed = r;
+        if (progSigned && r >= (BigInt(1) << BigInt(progWord - 1))) signed = r - max;
+        const out = `DEC: ${signed}\nHEX: 0x${r.toString(16).toUpperCase().padStart(Math.ceil(progWord/4),'0')}\nOCT: 0${r.toString(8)}\nBIN: ${r.toString(2).padStart(progWord,'0')}`;
+        document.getElementById('progResult').innerHTML = `<span class="lbl">A</span> = ${a} <span class="lbl">B</span> = ${b}\n\n<span class="lbl">${op.toUpperCase()}</span> 结果:\n${out}`;
+        setMood('happy', 'sparkle');
+      });
+    });
+  }
+  function openProgPanel() {
+    closeAllPanels();
+    document.getElementById('calc').classList.add('show-prog');
+    syncProgFromDec();
+    setMood('wave'); playSound('whoosh');
+  }
+  function closeProgPanel() { document.getElementById('calc').classList.remove('show-prog'); setMood('idle'); }
+
+  // ===== 统计面板 =====
+  function parseStatsData(txt) {
+    return txt.split(/[\s,，;；\n\r\t]+/).map(s => s.trim()).filter(s => s !== '').map(Number).filter(n => !isNaN(n));
+  }
+  function bindStatsPanel() {
+    document.getElementById('statsCalc').addEventListener('click', () => {
+      playSound('equal');
+      const data = parseStatsData(document.getElementById('statsData').value);
+      const out = document.getElementById('statsResult');
+      if (data.length === 0) { out.textContent = '请输入有效数据～'; setMood('think'); return; }
+      const n = data.length;
+      const sum = data.reduce((a, b) => a + b, 0);
+      const mean = sum / n;
+      const sq = data.reduce((a, b) => a + b * b, 0);
+      const popVar = sq / n - mean * mean;
+      const popStd = Math.sqrt(Math.max(popVar, 0));
+      const sampVar = n > 1 ? sq / (n - 1) - sum * sum / (n * (n - 1)) : 0;
+      const sampStd = Math.sqrt(Math.max(sampVar, 0));
+      const sorted = [...data].sort((a, b) => a - b);
+      const q = (p) => { const pos = (sorted.length - 1) * p, base = Math.floor(pos), rest = pos - base; return sorted[base + 1] !== undefined ? sorted[base] + rest * (sorted[base + 1] - sorted[base]) : sorted[base]; };
+      const median = sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
+      const pv = (data.reduce((s, v) => s + Math.pow(v - mean, 3), 0) / n) / Math.pow(popStd || 1, 3);
+      const pk = (data.reduce((s, v) => s + Math.pow(v - mean, 4), 0) / n) / Math.pow(popVar || 1, 2);
+      const html = `<span class="lbl">数据个数 n</span> = <span class="num">${n}</span>
+<span class="lbl">和 Σx</span> = <span class="num">${fmt(sum)}</span>
+<span class="lbl">均值 x̄</span> = <span class="num">${fmt(mean)}</span>
+<span class="lbl">中位数</span> = <span class="num">${fmt(median)}</span>
+<span class="lbl">最小值</span> = <span class="num">${fmt(sorted[0])}</span>
+<span class="lbl">最大值</span> = <span class="num">${fmt(sorted[n-1])}</span>
+<span class="lbl">Q1 / Q3</span> = <span class="num">${fmt(q(.25))} / ${fmt(q(.75))}</span>
+<span class="lbl">极差</span> = <span class="num">${fmt(sorted[n-1] - sorted[0])}</span>
+<span class="lbl">总体方差 σ²</span> = <span class="num">${fmt(popVar)}</span>
+<span class="lbl">总体标准差 σ</span> = <span class="num">${fmt(popStd)}</span>
+<span class="lbl">样本方差 s²</span> = <span class="num">${fmt(sampVar)}</span>
+<span class="lbl">样本标准差 s</span> = <span class="num">${fmt(sampStd)}</span>
+<span class="lbl">变异系数 CV</span> = <span class="num">${mean ? fmt(popStd / Math.abs(mean) * 100) + '%' : '—'}</span>
+<span class="lbl">偏度 / 峰度</span> = <span class="num">${fmt(pv)} / ${fmt(pk)}</span>`;
+      out.innerHTML = html;
+      setMood('happy', 'sparkle'); confetti();
+    });
+  }
+  function openStatsPanel() { closeAllPanels(); document.getElementById('calc').classList.add('show-stats'); setMood('wave'); playSound('whoosh'); }
+  function closeStatsPanel() { document.getElementById('calc').classList.remove('show-stats'); setMood('idle'); }
+
+  // ===== 方程求解面板 =====
+  let eqType = 'quad';
+  function renderEqBody() {
+    const body = document.getElementById('eqBody');
+    if (eqType === 'quad') {
+      body.innerHTML = `<div class="hint">ax² + bx + c = 0</div>
+        <div class="panel-row"><label>a</label><input type="number" id="eq_a" value="1"></div>
+        <div class="panel-row"><label>b</label><input type="number" id="eq_b" value="-3"></div>
+        <div class="panel-row"><label>c</label><input type="number" id="eq_c" value="-4"></div>`;
+    } else if (eqType === 'linear2') {
+      body.innerHTML = `<div class="hint">a₁x + b₁y = c₁ ／ a₂x + b₂y = c₂</div>
+        <div class="panel-row"><label>a₁</label><input type="number" id="eq_a1" value="2"></div>
+        <div class="panel-row"><label>b₁</label><input type="number" id="eq_b1" value="1"></div>
+        <div class="panel-row"><label>c₁</label><input type="number" id="eq_c1" value="5"></div>
+        <div class="panel-row"><label>a₂</label><input type="number" id="eq_a2" value="1"></div>
+        <div class="panel-row"><label>b₂</label><input type="number" id="eq_b2" value="-1"></div>
+        <div class="panel-row"><label>c₂</label><input type="number" id="eq_c2" value="1"></div>`;
+    } else if (eqType === 'linear3') {
+      body.innerHTML = `<div class="hint">a₁x+b₁y+c₁z=d₁ ／ a₂x+b₂y+c₂z=d₂ ／ a₃x+b₃y+c₃z=d₃</div>
+        <div class="panel-row"><label>a₁</label><input type="number" id="l3_11" value="2"><label>b₁</label><input type="number" id="l3_12" value="3"><label>c₁</label><input type="number" id="l3_13" value="-1"><label>d₁</label><input type="number" id="l3_14" value="9"></div>
+        <div class="panel-row"><label>a₂</label><input type="number" id="l3_21" value="1"><label>b₂</label><input type="number" id="l3_22" value="-1"><label>c₂</label><input type="number" id="l3_23" value="2"><label>d₂</label><input type="number" id="l3_24" value="3"></div>
+        <div class="panel-row"><label>a₃</label><input type="number" id="l3_31" value="3"><label>b₃</label><input type="number" id="l3_32" value="1"><label>c₃</label><input type="number" id="l3_33" value="2"><label>d₃</label><input type="number" id="l3_34" value="12"></div>`;
+    } else if (eqType === 'cubic') {
+      body.innerHTML = `<div class="hint">ax³ + bx² + cx + d = 0（卡丹公式，实根）</div>
+        <div class="panel-row"><label>a</label><input type="number" id="c3_a" value="1"></div>
+        <div class="panel-row"><label>b</label><input type="number" id="c3_b" value="0"></div>
+        <div class="panel-row"><label>c</label><input type="number" id="c3_c" value="-7"></div>
+        <div class="panel-row"><label>d</label><input type="number" id="c3_d" value="-6"></div>`;
+    }
+  }
+  function solveQuad(a, b, c) {
+    if (a === 0) {
+      if (b === 0) return c === 0 ? '恒等式，任意 x 均为解' : '无解';
+      return `一次方程：x = ${fmt(-c / b)}`;
+    }
+    const disc = b * b - 4 * a * c;
+    if (disc < 0) {
+      const re = fmt(-b / (2 * a)), im = fmt(Math.sqrt(-disc) / Math.abs(2 * a));
+      return `判别式 <span class="num">${fmt(disc)}</span> &lt; 0，两个共轭复根：\nx₁ = <span class="num">${re} + ${im}i</span>\nx₂ = <span class="num">${re} - ${im}i</span>`;
+    }
+    const sq = Math.sqrt(disc);
+    const x1 = (-b + sq) / (2 * a), x2 = (-b - sq) / (2 * a);
+    return `判别式 Δ = <span class="num">${fmt(disc)}</span>\nx₁ = <span class="num">${fmt(x1)}</span>\nx₂ = <span class="num">${fmt(x2)}</span>\n韦达定理：x₁+x₂ = <span class="num">${fmt(-b/a)}</span>，x₁·x₂ = <span class="num">${fmt(c/a)}</span>`;
+  }
+  function solveLinear2() {
+    const a1 = +document.getElementById('eq_a1').value, b1 = +document.getElementById('eq_b1').value, c1 = +document.getElementById('eq_c1').value;
+    const a2 = +document.getElementById('eq_a2').value, b2 = +document.getElementById('eq_b2').value, c2 = +document.getElementById('eq_c2').value;
+    const det = a1 * b2 - a2 * b1;
+    if (Math.abs(det) < 1e-12) return '系数行列式为 0，无解或有无穷多解';
+    const x = (c1 * b2 - c2 * b1) / det, y = (a1 * c2 - a2 * c1) / det;
+    return `D = <span class="num">${fmt(det)}</span>\nx = <span class="num">${fmt(x)}</span>\ny = <span class="num">${fmt(y)}</span>`;
+  }
+  function solveLinear3() {
+    const M = [
+      [+document.getElementById('l3_11').value, +document.getElementById('l3_12').value, +document.getElementById('l3_13').value, +document.getElementById('l3_14').value],
+      [+document.getElementById('l3_21').value, +document.getElementById('l3_22').value, +document.getElementById('l3_23').value, +document.getElementById('l3_24').value],
+      [+document.getElementById('l3_31').value, +document.getElementById('l3_32').value, +document.getElementById('l3_33').value, +document.getElementById('l3_34').value]
+    ];
+    const det = M[0][0]*(M[1][1]*M[2][2]-M[1][2]*M[2][1]) - M[0][1]*(M[1][0]*M[2][2]-M[1][2]*M[2][0]) + M[0][2]*(M[1][0]*M[2][1]-M[1][1]*M[2][0]);
+    if (Math.abs(det) < 1e-12) return '系数行列式为 0，无解或有无穷多解';
+    let out = `D = <span class="num">${fmt(det)}</span>\n`;
+    ['x','y','z'].forEach((name, i) => {
+      const C = [M[0].slice(), M[1].slice(), M[2].slice()];
+      for (let r = 0; r < 3; r++) C[r][i] = M[r][3];
+      const d = C[0][0]*(C[1][1]*C[2][2]-C[1][2]*C[2][1]) - C[0][1]*(C[1][0]*C[2][2]-C[1][2]*C[2][0]) + C[0][2]*(C[1][0]*C[2][1]-C[1][1]*C[2][0]);
+      out += `${name} = <span class="num">${fmt(d / det)}</span>\n`;
+    });
+    return out;
+  }
+  function solveCubic(a, b, c, d) {
+    if (a === 0) return solveQuad(b, c, d);
+    const A = b / a, B = c / a, C = d / a;
+    const p = B - A * A / 3, q = 2 * A * A * A / 27 - A * B / 3 + C;
+    const disc = q * q / 4 + p * p * p / 27;
+    const roots = [];
+    if (Math.abs(p) < 1e-14 && Math.abs(q) < 1e-14) {
+      roots.push(0, 0, 0);
+    } else if (disc > 0) {
+      const u = -q / 2 + Math.sqrt(disc), v = -q / 2 - Math.sqrt(disc);
+      const cb = (t) => Math.sign(t) * Math.pow(Math.abs(t), 1/3);
+      roots.push(cb(u) + cb(v));
+    } else {
+      const r = Math.sqrt(-p / 3), th = Math.acos(-q / (2 * Math.pow(-p/3, 1.5)));
+      for (let k = 0; k < 3; k++) roots.push(2 * r * Math.cos((th + 2 * Math.PI * k) / 3));
+    }
+    const shift = -A / 3;
+    const real = roots.map(r => r + shift);
+    let out = `判别式 = <span class="num">${fmt(disc)}</span>\n`;
+    real.forEach((r, i) => { out += `x${i+1} = <span class="num">${fmt(r)}</span>\n`; });
+    return out;
+  }
+  function bindEqPanel() {
+    document.querySelectorAll('[data-eq]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-eq]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        eqType = btn.dataset.eq;
+        renderEqBody();
+        playSound('pop');
+      });
+    });
+    renderEqBody();
+    document.getElementById('eqCalc').addEventListener('click', () => {
+      playSound('equal');
+      const out = document.getElementById('eqResult');
+      let html;
+      try {
+        if (eqType === 'quad') html = solveQuad(+document.getElementById('eq_a').value, +document.getElementById('eq_b').value, +document.getElementById('eq_c').value);
+        else if (eqType === 'linear2') html = solveLinear2();
+        else if (eqType === 'linear3') html = solveLinear3();
+        else html = solveCubic(+document.getElementById('c3_a').value, +document.getElementById('c3_b').value, +document.getElementById('c3_c').value, +document.getElementById('c3_d').value);
+        out.innerHTML = html;
+        setMood('happy', 'sparkle'); confetti();
+      } catch(e) {
+        out.textContent = '求解失败，请检查输入～';
+        setMood('error', 'shake'); playSound('error');
+      }
+    });
+  }
+  function openEqPanel() { closeAllPanels(); document.getElementById('calc').classList.add('show-eq'); setMood('think'); playSound('whoosh'); }
+  function closeEqPanel() { document.getElementById('calc').classList.remove('show-eq'); setMood('idle'); }
+
+  // ===== 几何面板 =====
+  let geoType = 'circle';
+  const geoForms = {
+    circle: { fields: ['半径 r', '直径 d', '周长 C', '面积 S'], calc: (v, k) => {
+      let r;
+      if (k === '半径 r') r = v;
+      else if (k === '直径 d') r = v / 2;
+      else if (k === '周长 C') r = v / (2 * Math.PI);
+      else r = Math.sqrt(v / Math.PI);
+      return `r = <span class="num">${fmt(r)}</span>\nd = <span class="num">${fmt(2*r)}</span>\nC = <span class="num">${fmt(2*Math.PI*r)}</span>\nS = <span class="num">${fmt(Math.PI*r*r)}</span>`;
+    }},
+    triangle: { fields: ['底 a', '高 h', '边b', '边c'], calc: (v, k, all) => {
+      if (k === '底 a' || k === '高 h') {
+        const a = k === '底 a' ? v : +all[0].value || 0, h = k === '高 h' ? v : +all[1].value || 0;
+        return a && h ? `S = <span class="num">${fmt(a*h/2)}</span>` : '请填写底和高～';
+      }
+      const a = +all[0].value, b = +all[2].value, c = +all[3].value;
+      if (!a || !b || !c) return '请填写三条边～';
+      if (a + b <= c || a + c <= b || b + c <= a) return '这三条边不能构成三角形';
+      const p = (a + b + c) / 2;
+      const area = Math.sqrt(p * (p - a) * (p - b) * (p - c));
+      return `周长 = <span class="num">${fmt(a+b+c)}</span>\n面积(海伦) = <span class="num">${fmt(area)}</span>\n内切圆半径 = <span class="num">${fmt(area/p)}</span>\n外接圆半径 = <span class="num">${fmt(a*b*c/(4*area))}</span>`;
+    }},
+    rect: { fields: ['长 a', '宽 b', '对角线 d'], calc: (v, k, all) => {
+      let a, b;
+      if (k === '长 a') { a = v; b = +all[1].value; }
+      else if (k === '宽 b') { b = v; a = +all[0].value; }
+      else { const d = v; a = +all[0].value; b = Math.sqrt(Math.max(d*d - a*a, 0)); }
+      if (!a || !b) return '请填写长和宽～';
+      return `a = <span class="num">${fmt(a)}</span>\nb = <span class="num">${fmt(b)}</span>\n面积 S = <span class="num">${fmt(a*b)}</span>\n周长 = <span class="num">${fmt(2*(a+b))}</span>\n对角线 = <span class="num">${fmt(Math.sqrt(a*a+b*b))}</span>`;
+    }},
+    poly: { fields: ['边数 n', '边长 a', '外接半径 R'], calc: (v, k, all) => {
+      const n = Math.round(+all[0].value);
+      if (n < 3) return '边数至少为 3';
+      const a = +all[1].value, R = +all[2].value;
+      let side, radius;
+      if (k === '边长 a' && a) { side = a; radius = a / (2 * Math.sin(Math.PI / n)); }
+      else if (k === '外接半径 R' && R) { radius = R; side = 2 * R * Math.sin(Math.PI / n); }
+      else if (a) { side = a; radius = a / (2 * Math.sin(Math.PI / n)); }
+      else return '请填写边长或外接半径～';
+      const area = n * side * side / (4 * Math.tan(Math.PI / n));
+      return `n = <span class="num">${n}</span>\n边长 a = <span class="num">${fmt(side)}</span>\n外接半径 R = <span class="num">${fmt(radius)}</span>\n内切半径 r = <span class="num">${fmt(radius * Math.cos(Math.PI/n))}</span>\n面积 S = <span class="num">${fmt(area)}</span>\n内角 = <span class="num">${fmt(180*(n-2)/n)}°</span>`;
+    }}
+  };
+  function renderGeoBody() {
+    const body = document.getElementById('geoBody');
+    const f = geoForms[geoType].fields;
+    body.innerHTML = f.map((label, i) => `<div class="panel-row"><label>${label}</label><input type="number" data-geo-i="${i}" placeholder="输入 ${label}"></div>`).join('');
+    body.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const i = +inp.dataset.geoI;
+        const val = +inp.value;
+        if (inp.value === '' || isNaN(val)) return;
+        const all = body.querySelectorAll('input');
+        const html = geoForms[geoType].calc(val, f[i], all);
+        document.getElementById('geoResult').innerHTML = html;
+      });
+    });
+  }
+  function bindGeoPanel() {
+    document.querySelectorAll('[data-geo]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-geo]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        geoType = btn.dataset.geo;
+        renderGeoBody();
+        document.getElementById('geoResult').textContent = '输入任意一项即可自动计算～';
+        playSound('pop');
+      });
+    });
+    renderGeoBody();
+  }
+  function openGeoPanel() { closeAllPanels(); document.getElementById('calc').classList.add('show-geo'); setMood('think'); playSound('whoosh'); }
+  function closeGeoPanel() { document.getElementById('calc').classList.remove('show-geo'); setMood('idle'); }
+
+  // ===== 金融面板 =====
+  let finType = 'loan';
+  const finForms = {
+    loan: { fields: ['贷款总额', '年利率(%)', '期数(月)'], hint: '等额本息：输入贷款总额、年利率、还款期数（月），计算月供与总利息', calc: (v, all) => {
+      const P = +all[0].value, annual = +all[1].value, months = +all[2].value;
+      if (!P || !annual || !months) return '请填写完整信息～';
+      const r = annual / 100 / 12;
+      const m = r === 0 ? P / months : P * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+      const total = m * months, interest = total - P;
+      return `月利率 = <span class="num">${(r*100).toFixed(4)}%</span>\n月供 = <span class="num">${fmt(m)}</span>\n还款总额 = <span class="num">${fmt(total)}</span>\n总利息 = <span class="num">${fmt(interest)}</span>`;
+    }},
+    compound: { fields: ['本金', '年利率(%)', '年数', '复利次数/年'], hint: '复利终值：A = P(1 + r/n)^(nt)', calc: (v, all) => {
+      const P = +all[0].value, annual = +all[1].value, t = +all[2].value, n = +all[3].value || 1;
+      if (!P || !annual || !t) return '请填写完整信息～';
+      const r = annual / 100, A = P * Math.pow(1 + r / n, n * t);
+      return `终值 A = <span class="num">${fmt(A)}</span>\n利息 = <span class="num">${fmt(A - P)}</span>\n收益率 = <span class="num">${fmt((A/P-1)*100)}%</span>`;
+    }},
+    discount: { fields: ['终值 F', '贴现率(%)', '年数'], hint: '现值：PV = F / (1+r)^t', calc: (v, all) => {
+      const F = +all[0].value, r = +all[1].value / 100, t = +all[2].value;
+      if (!F || r === undefined || !t) return '请填写完整信息～';
+      const pv = F / Math.pow(1 + r, t);
+      return `现值 PV = <span class="num">${fmt(pv)}</span>\n贴现额 = <span class="num">${fmt(F - pv)}</span>`;
+    }},
+    vat: { fields: ['原价', '税率(%)', '小费(%)'], hint: '税费/小费：自动拆分税额、小费与合计', calc: (v, all) => {
+      const price = +all[0].value, tax = +all[1].value || 0, tip = +all[2].value || 0;
+      if (!price) return '请填写原价～';
+      const taxAmt = price * tax / 100, tipAmt = price * tip / 100;
+      return `税前价 = <span class="num">${fmt(price)}</span>\n税额(${tax}%) = <span class="num">${fmt(taxAmt)}</span>\n小费(${tip}%) = <span class="num">${fmt(tipAmt)}</span>\n合计 = <span class="num">${fmt(price + taxAmt + tipAmt)}</span>`;
+    }}
+  };
+  function renderFinBody() {
+    const body = document.getElementById('finBody');
+    const f = finForms[finType];
+    body.innerHTML = `<div class="hint">${f.hint}</div>` + f.fields.map(label => `<div class="panel-row"><label>${label}</label><input type="number" data-fin></div>`).join('');
+    body.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const all = body.querySelectorAll('input');
+        if ([...all].some(i => i.value === '')) return;
+        document.getElementById('finResult').innerHTML = finForms[finType].calc(null, all);
+      });
+    });
+  }
+  function bindFinPanel() {
+    document.querySelectorAll('[data-fin]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-fin]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        finType = btn.dataset.fin;
+        renderFinBody();
+        document.getElementById('finResult').textContent = '填写后自动计算，也可点「求解」～';
+        playSound('pop');
+      });
+    });
+    renderFinBody();
+    document.getElementById('finResult').textContent = '填写后自动计算，也可点「求解」～';
+  }
+  function openFinPanel() { closeAllPanels(); document.getElementById('calc').classList.add('show-fin'); setMood('think'); playSound('whoosh'); }
+  function closeFinPanel() { document.getElementById('calc').classList.remove('show-fin'); setMood('idle'); }
+
+  // ===== 函数图像绘制模块 =====
+  // 安全的表达式编译：把用户输入编译成可求值的函数
+  // 支持 ^ 幂、隐式乘法、正负号简化、常用数学函数
+  function compileExpr(src) {
+    let s = String(src).trim();
+    if (!s) throw new Error('表达式不能为空');
+
+    // 1. 符号归一化
+    s = s.replace(/[πΠ]/g, 'PI')
+         .replace(/[×]/g, '*')
+         .replace(/[÷]/g, '/')
+         .replace(/--/g, '+').replace(/\+\+/g, '+');   // 化简连续符号
+
+    // 2. 幂运算：把 x^2、2^x、sin(x)^2 转成 pow(...)（从右向左处理右结合）
+    const powRe = /([a-zA-Z0-9_.()]+|\))\s*\^\s*([a-zA-Z0-9_.]+|\([^()]*\))/;
+    let guard = 0;
+    while (powRe.test(s) && guard++ < 50) {
+      s = s.replace(powRe, (m, base, exp) => '\u0001(' + base + ',' + exp + ')');
+    }
+
+    // 3. 占位符 \u0001 替换为 pow，避免被后续正则误伤
+    s = s.replace(/\u0001/g, 'pow');
+
+    // 4. 补隐式乘法（必须在幂运算之后，用占位保护）
+    s = s.replace(/(\d)\s*([(xa-zA-Z])/g, '$1\u0002$2')       // 2x → 2*x
+         .replace(/\)\s*([(xa-zA-Z0-9_])/g, ')\u0002$1')       // )( → )*(  )x → )*x  )2 → )*2
+         .replace(/([xa-zA-Z0-9_.])\s*\(/g, '$1\u0002(');      // x( → x*(  PI( → PI*(
+    s = s.replace(/\u0002/g, '*');
+
+    // 5. 安全保护：在危险字符前插入无害标记，再做白名单过滤
+    //    允许字符：字母数字 _ . + - * / % ( ) , 空格 制表符
+    if (/[^a-zA-Z0-9_+\-*/%(),. \t]/.test(s)) throw new Error('表达式含非法字符');
+
+    // 6. 标识符白名单校验
+    const allowed = ['PI','E','pow','sin','cos','tan','asin','acos','atan','sinh','cosh','tanh','sqrt','abs','log','ln','exp','floor','ceil','round','random','min','max'];
+    const idRe = /[a-zA-Z_$][a-zA-Z0-9_$]*/g;
+    let m;
+    while ((m = idRe.exec(s)) !== null) {
+      const name = m[0];
+      if (!allowed.includes(name) && name !== 'x') {
+        throw new Error('不支持的标识符或函数: ' + name);
+      }
+    }
+
+    // 7. 在 Math 作用域内求值（sin/cos/pow/PI 等直接可用）
+    const body = 'with(Math){ return (' + s + '); }';
+    const fn = new Function('x', body);
+    const t = fn(1.5);
+    if (typeof t !== 'number' || !isFinite(t)) throw new Error('表达式在 x=1.5 处求值异常');
+    return fn;
+  }
+
+  // 自动挑选"好看"的刻度步长
+  function niceStep(raw) {
+    const exp = Math.floor(Math.log10(raw));
+    const f = raw / Math.pow(10, exp);
+    let nf;
+    if (f < 1.5) nf = 1;
+    else if (f < 3) nf = 2;
+    else if (f < 7.5) nf = 5;
+    else nf = 10;
+    return nf * Math.pow(10, exp);
+  }
+
+  const Graph = {
+    cv: null, ctx: null, wrap: null,
+    fn: null, exprText: '',
+    // 视图状态：以数学单位计
+    xMin: -10, xMax: 10, yMin: -6, yMax: 6,
+    pxPerUnit: 40,                  // 由范围计算
+    width: 600, height: 360,
+    hasGrid: true,
+    dpr: 1,
+    colors: ['#e91e63','#7c4dff','#00bcd4','#ff9800','#4caf50','#f44336','#3f51b5','#009688'],
+
+    init() {
+      this.cv = document.getElementById('graphCanvas');
+      this.ctx = this.cv.getContext('2d');
+      this.wrap = document.getElementById('canvasWrap');
+      this.dpr = window.devicePixelRatio || 1;
+      this.resize();
+      window.addEventListener('resize', () => this.resize());
+      this.bindInteraction();
+    },
+
+    resize() {
+      const rect = this.wrap.getBoundingClientRect();
+      const w = Math.max(rect.width || 340, 280);
+      this.width = w;
+      this.height = Math.round(w * 0.6);
+      this.cv.width = Math.round(this.width * this.dpr);
+      this.cv.height = Math.round(this.height * this.dpr);
+      this.cv.style.width = this.width + 'px';
+      this.cv.style.height = this.height + 'px';
+      this.recalcScale();
+      if (this.fn) this.draw();
+    },
+
+    recalcScale() {
+      this.pxPerUnit = this.width / (this.xMax - this.xMin);
+      const target = this.pxPerUnit;
+      // y 范围保持比例，使 1 单位 x ≈ 1 单位 y（各方向像素一致）
+      const ySpan = this.height / target;
+      const cx = (this.xMin + this.xMax) / 2;
+      this.yMin = -ySpan / 2; // 暂存，随后用 cx 对齐
+      // 让原点大致居中
+      const cy = this.height / 2 / target;
+      this.yMax = cy;
+      this.yMin = -cy;
+      // 重新用实际范围
+      const ys = this.height / target;
+      const mid = 0; // 原点在 y 方向也居中
+      this.yMax = ys / 2;
+      this.yMin = -ys / 2;
+    },
+
+    // 数学坐标 → 像素
+    toPx(x, y) {
+      return [
+        (x - this.xMin) * this.pxPerUnit,
+        this.height - (y - this.yMin) * this.pxPerUnit
+      ];
+    },
+
+    draw() {
+      const ctx = this.ctx;
+      const W = this.cv.width, H = this.cv.height;
+      const s = this.dpr;
+      ctx.save();
+      ctx.scale(s, s);
+      ctx.clearRect(0, 0, this.width, this.height);
+
+      // 背景
+      ctx.fillStyle = document.body.classList.contains('theme-dark') ? '#0f0f1e' : '#fdfdff';
+      ctx.fillRect(0, 0, this.width, this.height);
+
+      // 网格 + 刻度
+      this.drawGrid(ctx);
+
+      // 坐标轴
+      this.drawAxes(ctx);
+
+      // 曲线
+      this.drawCurve(ctx);
+
+      ctx.restore();
+    },
+
+    drawGrid(ctx) {
+      const step = niceStep((this.xMax - this.xMin) / 10);
+      ctx.lineWidth = 1;
+      ctx.font = '10px "WenQuanYi Micro Hei", sans-serif';
+      const dark = document.body.classList.contains('theme-dark');
+      const gridColor = dark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)';
+      const tickColor = dark ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.55)';
+
+      const xStart = Math.ceil(this.xMin / step) * step;
+      for (let x = xStart; x <= this.xMax + 1e-9; x += step) {
+        const [px] = this.toPx(x, 0);
+        if (Math.abs(x) < step / 2) continue;
+        ctx.strokeStyle = gridColor;
+        ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, this.height); ctx.stroke();
+        if (this.hasGrid) {
+          ctx.fillStyle = tickColor;
+          const label = Math.abs(x) > 1e-9 ? this.fmtTick(x) : '';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+          if (label) ctx.fillText(label, px, this.height - this.toPx(0, 0)[1] + 3);
+        }
+      }
+
+      const yStep = niceStep((this.yMax - this.yMin) / 10);
+      const yStart = Math.ceil(this.yMin / yStep) * yStep;
+      for (let y = yStart; y <= this.yMax + 1e-9; y += yStep) {
+        const [, py] = this.toPx(0, y);
+        if (Math.abs(y) < yStep / 2) continue;
+        ctx.strokeStyle = gridColor;
+        ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(this.width, py); ctx.stroke();
+        if (this.hasGrid) {
+          ctx.fillStyle = tickColor;
+          ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+          ctx.fillText(this.fmtTick(y), this.toPx(0, 0)[0] - 4, py);
+        }
+      }
+    },
+
+    fmtTick(v) {
+      if (Math.abs(v) < 1e-9) return '0';
+      if (Math.abs(v) >= 1000 || (Math.abs(v) < 0.01 && v !== 0)) return v.toExponential(0).replace('e+', 'e');
+      // 去掉浮点尾巴
+      return String(parseFloat(v.toFixed(4)));
+    },
+
+    drawAxes(ctx) {
+      const [ox, oy] = this.toPx(0, 0);
+      const dark = document.body.classList.contains('theme-dark');
+      const axisColor = dark ? '#8c7ae6' : '#7b4a7a';
+      ctx.strokeStyle = axisColor;
+      ctx.lineWidth = 1.6;
+      // x 轴（若可见）
+      if (oy >= 0 && oy <= this.height) {
+        ctx.beginPath(); ctx.moveTo(0, oy); ctx.lineTo(this.width, oy); ctx.stroke();
+      }
+      // y 轴（若可见）
+      if (ox >= 0 && ox <= this.width) {
+        ctx.beginPath(); ctx.moveTo(ox, 0); ctx.lineTo(ox, this.height); ctx.stroke();
+      }
+      // 原点标记
+      ctx.fillStyle = axisColor;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+      if (ox >= 0 && ox <= this.width && oy >= 0 && oy <= this.height) {
+        ctx.fillText('O', ox - 3, oy + 2);
+      }
+    },
+
+    drawCurve(ctx) {
+      if (!this.fn) return;
+      const n = Math.max(this.width * this.dpr, 400);
+      const dark = document.body.classList.contains('theme-dark');
+      ctx.lineWidth = 2.2;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      let pen = false;
+      let prevNan = true;
+      let lastY = 0, lastPy = 0;
+
+      ctx.beginPath();
+      for (let i = 0; i <= n; i++) {
+        const x = this.xMin + (i / n) * (this.xMax - this.xMin);
+        let y, bad = false;
+        try {
+          y = this.fn(x);
+          if (!isFinite(y)) bad = true;
+          else if (Math.abs(y) > 1e12) bad = true;      // 超大量按间断处理，避免溢出 NaN
+        } catch(e) { bad = true; }
+        if (bad) {
+          pen = false;
+          prevNan = true;
+          continue;
+        }
+        const px = this.toPx(x, y)[0], py = this.toPx(x, y)[1];
+        // 纵向越界检测：像素坐标超出画布 ±50% 视为穿越极点/渐近线，断线
+        if (py < -this.height * 0.5 || py > this.height * 1.5) {
+          pen = false;
+          prevNan = true;
+          continue;
+        }
+        if (pen && !prevNan) {
+          // 跨阶跃/渐近线的线段直接跳过（避免把 1/x 两侧连成斜线）
+          const stepPx = (this.xMax - this.xMin) / n * this.pxPerUnit;
+          const prev = this.toPx(x - (this.xMax - this.xMin) / n, lastY);
+          const prevPy = this.toPx(x - (this.xMax - this.xMin) / n, lastY)[1];
+          // 跳变检测：纵向变化超过画布 60% 或纵向速率异常大 → 视为渐近线/极点，断线
+          if (stepPx > 1e-9 && (Math.abs(py - prevPy) > this.height * 0.6 || Math.abs((py - prevPy) / stepPx) > 25)) {
+            ctx.moveTo(px, py);
+          } else {
+            ctx.lineTo(px, py);
+          }
+        } else {
+          ctx.moveTo(px, py);
+        }
+        pen = true;
+        prevNan = false;
+        lastY = y; lastPy = py;
+      }
+      ctx.strokeStyle = this.colors[0];
+      ctx.shadowColor = dark ? 'rgba(233,30,99,.5)' : 'rgba(233,30,99,.3)';
+      ctx.shadowBlur = 4;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    },
+
+    plot(expr, xmin, xmax) {
+      const info = document.getElementById('graphInfo');
+      try {
+        this.fn = compileExpr(expr);
+        this.exprText = expr;
+        const a = Number(xmin), b = Number(xmax);
+        if (!isFinite(a) || !isFinite(b)) throw new Error('x 范围需为有效数值');
+        if (b <= a) throw new Error('x 最大值需大于最小值');
+        this.xMin = a; this.xMax = b;
+        this.recalcScale();
+        this.draw();
+        const zero = this.findZero();
+        const ext = this.findExtremum();
+        // 计算关键点
+        const xs = (this.xMax - this.xMin) / 4;
+        const samples = [-2, -1, 0, 1, 2].map(k => this.xMin + (this.xMax - this.xMin) * (k + 2) / 4);
+        let points = [];
+        samples.forEach(x => {
+          try { const y = this.fn(x); if (isFinite(y)) points.push([x, y]); } catch(e) {}
+        });
+        const ys = points.map(p => p[1]);
+        const maxY = ys.length ? Math.max(...ys) : 0;
+        const minY = ys.length ? Math.min(...ys) : 0;
+        const sum = ys.reduce((a, b) => a + b, 0);
+        const mean = ys.length ? sum / ys.length : 0;
+        let tbl = `<span class="lbl">y = </span><span class="num">${expr}</span>　<span class="lbl">定义域</span> x ∈ [${this.fmtTick(a)}, ${this.fmtTick(b)}]\n`;
+        tbl += `<span class="lbl">采样关键点：</span>\n`;
+        points.forEach(([x, y]) => {
+          tbl += `  f(${this.fmtTick(x)}) = <span class="num">${this.fmtTick(y)}</span>\n`;
+        });
+        tbl += `<span class="lbl">采样极值：</span> 最小 <span class="num">${this.fmtTick(minY)}</span>，最大 <span class="num">${this.fmtTick(maxY)}</span>\n`;
+        if (zero) tbl += `<span class="lbl">与 x 轴交点：</span> x = <span class="num">${this.fmtTick(zero)}</span>\n`;
+        if (ext)  tbl += `<span class="lbl">极值点：</span> (${this.fmtTick(ext.x)}, <span class="num">${this.fmtTick(ext.y)}</span>)`;
+        info.innerHTML = tbl;
+        setMood('happy', 'sparkle');
+        speak('ok');
+        confetti();
+      } catch(e) {
+        speak('oops');
+        info.textContent = '⚠️ ' + '\n💡 试试这些写法：2*x+1、x^2-4、sin(x)、sqrt(x)、log(x+5)';
+        setMood('error', 'shake');
+      }
+    },
+
+    zoom(factor, fx, fy) {
+      // fx/fy 为画布像素坐标（聚焦中心）
+      const cx = (fx !== undefined) ? this.xMin + fx / this.pxPerUnit : (this.xMin + this.xMax) / 2;
+      const cy = (fy !== undefined) ? this.yMin + (this.height - fy) / this.pxPerUnit : (this.yMin + this.yMax) / 2;
+      const nw = (this.xMax - this.xMin) * factor;
+      const nh = (this.yMax - this.yMin) * factor;
+      this.xMin = cx - nw / 2; this.xMax = cx + nw / 2;
+      this.yMin = cy - nh / 2; this.yMax = cy + nh / 2;
+      this.recalcScale();
+      this.draw();
+    },
+
+    pan(dx, dy) {
+      const ux = dx / this.pxPerUnit;
+      const uy = dy / this.pxPerUnit;
+      this.xMin -= ux; this.xMax -= ux;
+      this.yMin += uy; this.yMax += uy;
+      this.recalcScale();
+      this.draw();
+    },
+
+    // 数值求解：二分法找零点 / 极值点
+    findZero() {
+      try {
+        const f = this.fn, a = this.xMin, b = this.xMax;
+        const fa = f(a), fb = f(b);
+        if (!isFinite(fa) || !isFinite(fb)) return null;
+        if (fa * fb > 0) return null;
+        let lo = a, hi = b, m;
+        for (let i = 0; i < 80; i++) {
+          m = (lo + hi) / 2;
+          const fm = f(m);
+          if (!isFinite(fm)) return null;
+          if (fa * fm <= 0) hi = m; else lo = m;
+        }
+        return (lo + hi) / 2;
+      } catch(e) { return null; }
+    },
+    findExtremum() {
+      try {
+        const f = this.fn, a = this.xMin, b = this.xMax;
+        const n = 300;
+        let best = null, bx = a;
+        for (let i = 0; i <= n; i++) {
+          const x = a + (b - a) * i / n;
+          const y = f(x);
+          if (isFinite(y) && (best === null || y > best)) { best = y; bx = x; }
+        }
+        if (best === null) return null;
+        // 黄金分割精修
+        let lo = bx - (b - a) / n, hi = bx + (b - a) / n;
+        lo = Math.max(a, lo); hi = Math.min(b, hi);
+        const gr = 0.6180339887;
+        let x1 = lo + (1 - gr) * (hi - lo), x2 = lo + gr * (hi - lo);
+        let f1 = f(x1), f2 = f(x2);
+        for (let i = 0; i < 60; i++) {
+          if (!isFinite(f1) || !isFinite(f2)) break;
+          if (f1 < f2) { lo = x1; x1 = x2; f1 = f2; x2 = lo + gr * (hi - lo); f2 = f(x2); }
+          else { hi = x2; x2 = x1; f2 = f1; x1 = lo + (1 - gr) * (hi - lo); f1 = f(x1); }
+        }
+        const xm = (lo + hi) / 2, ym = f(xm);
+        return isFinite(ym) ? { x: xm, y: ym } : null;
+      } catch(e) { return null; }
+    },
+
+        bindInteraction() {
+      let dragging = false, lastX, lastY;
+      const cv = this.cv;
+
+      const getPos = (e) => {
+        const r = cv.getBoundingClientRect();
+        const t = e.touches ? e.touches[0] : e;
+        return { x: t.clientX - r.left, y: t.clientY - r.top };
+      };
+
+      cv.addEventListener('mousedown', (e) => {
+        dragging = true; lastX = e.clientX; lastY = e.clientY;
+        cv.style.cursor = 'grabbing';
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        this.pan(e.clientX - lastX, e.clientY - lastY);
+        lastX = e.clientX; lastY = e.clientY;
+      });
+      window.addEventListener('mouseup', () => { dragging = false; cv.style.cursor = 'crosshair'; });
+
+      cv.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          dragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+      cv.addEventListener('touchmove', (e) => {
+        if (!dragging || e.touches.length !== 1) return;
+        const t = e.touches[0];
+        this.pan(t.clientX - lastX, t.clientY - lastY);
+        lastX = t.clientX; lastY = t.clientY;
+      }, { passive: true });
+      cv.addEventListener('touchend', () => { dragging = false; });
+
+      cv.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const p = getPos(e);
+        const factor = e.deltaY < 0 ? 0.85 : 1.18;
+        this.zoom(factor, p.x, p.y);
+      }, { passive: false });
+
+      // 双击复位
+      cv.addEventListener('dblclick', () => {
+        this.xMin = Number(document.getElementById('graphXmin').value) || -10;
+        this.xMax = Number(document.getElementById('graphXmax').value) || 10;
+        this.recalcScale();
+        this.draw();
+        showToast('视图已复位 ↺');
+      });
+    }
+  };
+
+  function bindGraphPanel() {
+    Graph.init();
+
+    // 预设快捷按钮
+    document.querySelectorAll('[data-pre]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-pre]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('graphExpr').value = btn.dataset.pre;
+        doPlot();
+        playSound('pop');
+      });
+    });
+
+    function doPlot() {
+      const expr = document.getElementById('graphExpr').value.trim();
+      const xmin = document.getElementById('graphXmin').value;
+      const xmax = document.getElementById('graphXmax').value;
+      Graph.hasGrid = document.getElementById('graphGrid').checked;
+      if (!expr) { showToast('请输入表达式～'); return; }
+      Graph.plot(expr, xmin, xmax);
+    }
+
+    document.getElementById('graphPlot').addEventListener('click', () => { doPlot(); });
+    document.getElementById('graphExpr').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doPlot(); }
+    });
+    document.getElementById('graphGrid').addEventListener('change', () => {
+      Graph.hasGrid = document.getElementById('graphGrid').checked;
+      Graph.draw();
+    });
+    ['graphXmin','graphXmax'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => doPlot());
+    });
+  }
+
+  function openGraphPanel() {
+    closeAllPanels();
+    document.getElementById('calc').classList.add('show-graph');
+    setTimeout(() => Graph.resize(), 50);
+    setMood('think'); playSound('whoosh');
+  }
+  function closeGraphPanel() { document.getElementById('calc').classList.remove('show-graph'); setMood('idle'); }
+
+  // ===== 初始化 =====
+  bindDateCalc();
+  bindProgPanel();
+  bindStatsPanel();
+  bindEqPanel();
+  bindGeoPanel();
+  bindFinPanel();
+  bindGraphPanel();
+  loadData();
+</script>
+</body>
+</html>
